@@ -67,31 +67,31 @@ class Parachutist:
 
     def __post_init__(self):
         self.left_pulled_parachute = [
-            np.array([-40, -45]),
-            np.array([-25, -60]),
-            np.array([25, -60]),
-            np.array([45, -50]),
+            np.array([-40, -25]),
+            np.array([-5, -60]),
+            np.array([5, -60]),
+            np.array([45, -65]),
         ]
 
         self.right_pulled_parachute = [
-            np.array([-45, -50]),
-            np.array([-25, -60]),
-            np.array([25, -60]),
-            np.array([40, -45]),
+            np.array([-45, -65]),
+            np.array([-5, -60]),
+            np.array([5, -60]),
+            np.array([40, -25]),
         ]
 
         self.default_parachute = [
-            np.array([-45, -50]),
-            np.array([-25, -60]),
-            np.array([25, -60]),
-            np.array([45, -50]),
+            np.array([-45, -55]),
+            np.array([-5, -60]),
+            np.array([5, -60]),
+            np.array([45, -55]),
         ]
 
-        self.both_pulled_parachute = [
-            np.array([-40, -45]),
-            np.array([-25, -60]),
-            np.array([25, -60]),
-            np.array([40, -45]),
+        self.both_pulled_parachute = [#CAN PULLED BOTH SIDES ???
+            np.array([-40, -25]),
+            np.array([-5, -60]),
+            np.array([5, -60]),
+            np.array([40, -25]),
         ]
 
         self.parachute = self.default_parachute
@@ -115,36 +115,48 @@ class Parachutist:
         self.strings = [(np.array([0, 0]), x) for x in self.parachute]
 
     def apply_forces(self):
-        """Applies forces to the parachutist."""
+        """Applies forces to the parachutist.
+        Source: https://www.physagreg.fr/mecanique/m12/M12-chute-libre-frottements.pdf
+        """
         gravity = np.array([0, 9.81])
 
         air_volumic_mass = 1.292
         C = 0.47
-        drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(self.velocity) ** 2
 
+        #1st wing
         left_wing = self.parachute[1] - self.parachute[0]
         left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
-        left_drag = drag * left_normal
+        left_wing_vel=np.dot(self.velocity, left_normal)
+        left_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2      
+        left_drag = left_drag * left_normal
 
+        #2nd wing
         right_wing = self.parachute[3] - self.parachute[2]
         right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
-        right_drag = drag * right_normal
+        right_wing_vel=np.dot(self.velocity, right_normal)
+        right_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
+        right_drag = right_drag * right_normal
 
+        #center wing
         center_wing = self.parachute[2] - self.parachute[1]
         center_normal = np.array([center_wing[1], -center_wing[0]]) / np.linalg.norm(center_wing)
-        center_drag = drag * center_normal
+        center_wing_vel=np.dot(self.velocity, center_normal)
+        center_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(center_wing_vel) ** 2
+        center_drag = center_drag * center_normal
 
         if np.linalg.norm(self.velocity) > 10:
             pass
             print("Too fast !")
+            print("high velocity", self.velocity)
             # self.velocity = self.velocity / np.linalg.norm(self.velocity)
             # self.velocity = np.array([0.0, 0.0])
             # return
             raise Exception()
 
-        print(left_drag)
-        print(right_drag)
-        print(center_drag)
+        print('gravity', gravity)
+        print('drag', (center_drag + left_drag + right_drag) / self.mass)
+        print('position', self.position)
+        print('velocity', self.velocity)
 
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
@@ -214,5 +226,6 @@ if __name__ == "__main__":
 
         action = Action.from_tuple(input)
         env.step(action)
+       
 
         env.render()
