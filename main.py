@@ -1,7 +1,7 @@
 import pygame
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Tuple, Mapping
 import numpy as np
 from enum import Enum
 
@@ -59,6 +59,7 @@ class Parachutist:
     rotation: float = field(default=0, init=False)
     position: Vec = field(default=np.array([0.0, 0.0]), init=False)
     velocity: Vec = field(default=np.array([0.0, 0.0]), init=False)
+    mass: float = field(default=1, init=False)
 
     time_step: float = field(default=0.1, init=False)
 
@@ -119,24 +120,33 @@ class Parachutist:
 
         air_volumic_mass = 1.292
         C = 0.47
-        drag = 0.5 * air_volumic_mass * C * np.linalg.norm(self.velocity) ** 2
+        drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(self.velocity) ** 2
 
         left_wing = self.parachute[1] - self.parachute[0]
-        left_drag = drag * np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
+        left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
+        left_drag = drag * left_normal
 
         right_wing = self.parachute[3] - self.parachute[2]
-        right_drag = drag * np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
+        right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
+        right_drag = drag * right_normal
 
         center_wing = self.parachute[2] - self.parachute[1]
-        center_drag = drag * np.array([center_wing[1], -center_wing[0]]) / np.linalg.norm(center_wing)
+        center_normal = np.array([center_wing[1], -center_wing[0]]) / np.linalg.norm(center_wing)
+        center_drag = drag * center_normal
 
         if np.linalg.norm(self.velocity) > 10:
             pass
             print("Too fast !")
-            self.velocity = self.velocity / np.linalg.norm(self.velocity)
-            self.velocity = np.array([0.0, 0.0])
-            return
-        self.velocity += (gravity + center_drag + left_drag + right_drag) * self.time_step
+            # self.velocity = self.velocity / np.linalg.norm(self.velocity)
+            # self.velocity = np.array([0.0, 0.0])
+            # return
+            raise Exception()
+
+        print(left_drag)
+        print(right_drag)
+        print(center_drag)
+
+        self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
 
     def draw(self, screen: pygame.Surface):
@@ -149,6 +159,9 @@ class Parachutist:
 
 
 class ParachutistEnv(Env):
+    # TODO :
+    # - Add a reward function
+
     def __init__(self):
         self.screen = pygame.display.set_mode((800, 600))
         self.clock = pygame.time.Clock()
@@ -157,7 +170,18 @@ class ParachutistEnv(Env):
     def reset(self):
         pass
 
-    def step(self, action: Action):
+    def step(self, action: Action) -> Tuple[Parachutist, float, bool, bool, Mapping]:
+        """
+        @params:
+            - action: The action to perform.
+
+        @returns:
+            - parachutist: The parachutist, representing the state of the environment.
+            - reward: The reward of the action.
+            - done: Whether the episode is over.
+            - truncated: Whether the episode is truncated.
+            - info: Additional information.
+        """
         self.parachutist.pull(action)
         self.parachutist.apply_forces()
 
