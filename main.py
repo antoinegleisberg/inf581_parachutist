@@ -56,7 +56,8 @@ class Parachutist:
     body: List[Vec] = field(default_factory=list, init=False)
     strings: List[Tuple[Vec, Vec]] = field(default_factory=list, init=False)
 
-    rotation: float = field(default=0, init=False)
+    teta: float = field(default=0, init=False)
+    teta_dot: float = field(default=0, init=False)
     position: Vec = field(default=np.array([0.0, 0.0]), init=False)
     velocity: Vec = field(default=np.array([0.0, 0.0]), init=False)
     mass: float = field(default=1, init=False)
@@ -153,21 +154,79 @@ class Parachutist:
             # return
             raise Exception()
 
-        print('gravity', gravity)
-        print('drag', (center_drag + left_drag + right_drag) / self.mass)
-        print('position', self.position)
-        print('velocity', self.velocity)
 
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
+    
+    def apply_momentum(self):# with respect to axis going through middle top of the parachute (0,-60)
 
+        air_volumic_mass = 1.292
+        C = 0.47
+        gravity = np.array([0, 9.81])
+
+        #moment of gravity
+        l=np.linalg.norm((self.parachute[2] + self.parachute[1])/2)
+        r=l*np.array([np.sin(self.teta),np.cos(self.teta)])
+        #print dim of teta_offset
+        gravity_moment = -self.mass * gravity[1] * l*np.sin(self.teta)
+
+        #1st wing
+        left_wing = self.parachute[1] - self.parachute[0]
+        left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
+        left_wing_vel=np.dot(self.velocity, left_normal)
+        left_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2      
+        left_drag = left_drag * left_normal
+
+        #moment of force
+        left_r=(self.parachute[1] + self.parachute[0])/2 - (self.parachute[2] + self.parachute[1])/2
+        left_moment = np.cross(left_r, left_drag)
+
+
+        #2nd wing
+        right_wing = self.parachute[3] - self.parachute[2]
+        right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
+        right_wing_vel=np.dot(self.velocity, right_normal)
+        right_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
+        right_drag = right_drag * right_normal
+
+        #moment of force
+        right_r=(self.parachute[3] + self.parachute[2])/2 -(self.parachute[2] + self.parachute[1])/2
+        right_moment = np.cross(right_r, right_drag)
+
+        #center wing~
+        """
+        no moment of force since force is perpendicular to the axis of rotation
+        """
+        if np.linalg.norm(self.teta) > np.pi:
+            
+            print("Too much angle !")
+            print("high teta", self.teta)
+            raise Exception()
+        
+        
+
+        inertia=0.5*self.mass*np.linalg.norm(r)**2
+        drag_moment=left_moment+right_moment
+        self.teta_dot +=   ((gravity_moment+drag_moment  ) / inertia)*self.time_step
+        self.teta += self.teta_dot * self.time_step
+    
+        print('gravity_moment', gravity_moment)
+        #print('drag_moment', (center_moment + left_moment + right_moment))
+        print('teta_dot', self.teta_dot)
+        print('teta', self.teta)
     def draw(self, screen: pygame.Surface):
         """Draws the parachutist on the screen."""
+
+        #take angle teta into account: teta_offset on the body
+        l=np.linalg.norm((self.parachute[2] + self.parachute[1])/2)
+        teta_offset = np.array([l*np.sin(self.teta), -l*(1-np.cos(self.teta))])
         offset = self.position + np.array([400, 300])
-        pygame.draw.lines(screen, (255, 255, 255), False, [coord + offset for coord in self.parachute], 10)
-        pygame.draw.ellipse(screen, (255, 255, 255), pygame.Rect((self.body + offset)[0], (10, 20)))
+        pygame.draw.lines(screen, (255, 255, 255), False, [coord + offset  for coord in self.parachute], 10)
+        print('teta_offset', teta_offset)
+        print('self.body', self.body)
+        pygame.draw.ellipse(screen, (255, 255, 255), pygame.Rect((self.body+teta_offset + offset)[0], (10, 20)))
         for string in self.strings:
-            pygame.draw.line(screen, (255, 255, 255), string[0] + offset, string[1] + offset, 2)
+            pygame.draw.line(screen, (255, 255, 255), string[0] + offset + teta_offset, string[1] + offset, 2)
 
 
 class ParachutistEnv(Env):
@@ -196,6 +255,7 @@ class ParachutistEnv(Env):
         """
         self.parachutist.pull(action)
         self.parachutist.apply_forces()
+        self.parachutist.apply_momentum()
 
     def render(self):
         self.screen.fill((0, 0, 0))
