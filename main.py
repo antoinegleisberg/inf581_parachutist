@@ -7,6 +7,9 @@ from enum import Enum
 
 Vec = np.ndarray
 
+# TODO
+# Add the island and stop game if land on island OR fall in water
+# Add the reward function
 
 class Action(Enum):
     NONE = 0
@@ -157,6 +160,7 @@ class Parachutist:
 
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
+        print("velocity", self.velocity)
     
     def apply_momentum(self):# with respect to axis going through middle top of the parachute (0,-60)
 
@@ -180,6 +184,7 @@ class Parachutist:
         #moment of force
         left_r=(self.parachute[1] + self.parachute[0])/2 - (self.parachute[2] + self.parachute[1])/2
         left_moment = -np.cross(left_r, left_drag)
+        print("left_moment", left_moment)
       
 
 
@@ -209,12 +214,10 @@ class Parachutist:
 
         inertia=0.5*self.mass*np.linalg.norm(r)**2
         drag_moment=left_moment+right_moment
-        self.teta_dot +=   ((gravity_moment+drag_moment  ) / inertia)*self.time_step
+        self.teta_dot +=   ((gravity_moment+drag_moment  ) / inertia)*self.time_step - 0.05*self.teta_dot*self.time_step
         self.teta += self.teta_dot * self.time_step
     
-        #print('drag_moment', (center_moment + left_moment + right_moment))
-        print('teta_dot', self.teta_dot)
-        print('teta', self.teta)
+    
     def draw(self, screen: pygame.Surface):
         """Draws the parachutist on the screen."""
 
