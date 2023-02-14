@@ -179,7 +179,8 @@ class Parachutist:
 
         #moment of force
         left_r=(self.parachute[1] + self.parachute[0])/2 - (self.parachute[2] + self.parachute[1])/2
-        left_moment = np.cross(left_r, left_drag)
+        left_moment = -np.cross(left_r, left_drag)
+      
 
 
         #2nd wing
@@ -191,13 +192,14 @@ class Parachutist:
 
         #moment of force
         right_r=(self.parachute[3] + self.parachute[2])/2 -(self.parachute[2] + self.parachute[1])/2
-        right_moment = np.cross(right_r, right_drag)
+        right_moment = -np.cross(right_r, right_drag)
+    
 
         #center wing~
         """
         no moment of force since force is perpendicular to the axis of rotation
         """
-        if np.linalg.norm(self.teta) > np.pi:
+        if np.linalg.norm(self.teta) > np.pi/4:
             
             print("Too much angle !")
             print("high teta", self.teta)
@@ -210,7 +212,6 @@ class Parachutist:
         self.teta_dot +=   ((gravity_moment+drag_moment  ) / inertia)*self.time_step
         self.teta += self.teta_dot * self.time_step
     
-        print('gravity_moment', gravity_moment)
         #print('drag_moment', (center_moment + left_moment + right_moment))
         print('teta_dot', self.teta_dot)
         print('teta', self.teta)
@@ -222,8 +223,7 @@ class Parachutist:
         teta_offset = np.array([l*np.sin(self.teta), -l*(1-np.cos(self.teta))])
         offset = self.position + np.array([400, 300])
         pygame.draw.lines(screen, (255, 255, 255), False, [coord + offset  for coord in self.parachute], 10)
-        print('teta_offset', teta_offset)
-        print('self.body', self.body)
+     
         pygame.draw.ellipse(screen, (255, 255, 255), pygame.Rect((self.body+teta_offset + offset)[0], (10, 20)))
         for string in self.strings:
             pygame.draw.line(screen, (255, 255, 255), string[0] + offset + teta_offset, string[1] + offset, 2)
