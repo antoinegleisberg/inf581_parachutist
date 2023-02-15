@@ -7,9 +7,6 @@ from enum import Enum
 
 Vec = np.ndarray
 
-# TODO
-# Add the island and stop game if land on island OR fall in water
-# Add the reward function
 
 class Action(Enum):
     NONE = 0
@@ -148,7 +145,7 @@ class Parachutist:
         center_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(center_wing_vel) ** 2
         center_drag = center_drag * center_normal
 
-        if np.linalg.norm(self.velocity) > 10:
+        if np.linalg.norm(self.velocity) > 20:
             pass
             print("Too fast !")
             print("high velocity", self.velocity)
@@ -161,6 +158,7 @@ class Parachutist:
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
         print("velocity", self.velocity)
+        print("position", self.position)
     
     def apply_momentum(self):# with respect to axis going through middle top of the parachute (0,-60)
 
@@ -184,7 +182,6 @@ class Parachutist:
         #moment of force
         left_r=(self.parachute[1] + self.parachute[0])/2 - (self.parachute[2] + self.parachute[1])/2
         left_moment = -np.cross(left_r, left_drag)
-        print("left_moment", left_moment)
       
 
 
@@ -231,20 +228,26 @@ class Parachutist:
         for string in self.strings:
             pygame.draw.line(screen, (255, 255, 255), string[0] + offset + teta_offset, string[1] + offset, 2)
 
+        #draw island in the middle
+        pygame.draw.ellipse(screen, (0, 255, 0), pygame.Rect((340, 540), (100, 10)))
+
 
 class ParachutistEnv(Env):
-    # TODO :
-    # - Add a reward function
+    
 
     def __init__(self):
         self.screen = pygame.display.set_mode((800, 600))
         self.clock = pygame.time.Clock()
         self.parachutist = Parachutist()
+        self.stepnumber = 0
+        self.game_over = False
+        self.island_pos=np.array([0,234])
+        self.side_x_pos=np.array([-344,344])
 
     def reset(self):
         pass
 
-    def step(self, action: Action) -> Tuple[Parachutist, float, bool, bool, Mapping]:
+    def step(self, action: Action) -> Tuple[Parachutist, float, bool, Mapping]:
         """
         @params:
             - action: The action to perform.
@@ -259,6 +262,60 @@ class ParachutistEnv(Env):
         self.parachutist.pull(action)
         self.parachutist.apply_forces()
         self.parachutist.apply_momentum()
+
+        #State variables for reward
+        state=np.array([self.parachutist.position[0],self.parachutist.position[1],
+        self.parachutist.teta,self.parachutist.teta_dot,
+        self.parachutist.velocity[0],self.parachutist.velocity[1]])
+
+        
+
+        
+        # REWARD -------------------------------------------------------------------------------------------------------
+        x_distance=abs(self.island_pos[0]-self.parachutist.position[0])
+        y_distance=abs(self.island_pos[1]-self.parachutist.position[1])
+        # state variables for reward
+        distance = np.linalg.norm((3 * x_distance, y_distance))  # weight x position more
+        speed = np.linalg.norm(self.parachutist.velocity)
+        groundcontact = self.parachutist.position[1] >self.island_pos[1]
+        brokenleg = (
+            (np.abs(self.parachutist.teta) > np.pi / 6 or speed > 10)
+        ) and groundcontact
+        water= (groundcontact and (self.parachutist.position[0] < self.island_pos[0]-100 or self.parachutist.position[0] > self.island_pos[0]+100))
+        outside = (self.parachutist.position[0] < self.side_x_pos[0] or self.parachutist.position[0] > self.side_x_pos[1])
+        landed = (groundcontact and not brokenleg and not water)
+        
+        done = False
+
+        reward =0
+
+        if outside or brokenleg or water:
+            print("outside", outside)
+            print("brokenleg", brokenleg)
+            print("water", water)
+            self.game_over = True
+
+        if self.game_over:
+            done = True
+        else:
+            # reward shaping
+                 
+            if landed:
+                print("landed")
+                reward = 100
+                done = True
+
+        if done:
+            reward += - 2 * (speed + distance + np.abs(self.parachutist.teta) + np.abs(speed))
+
+
+        # END OF STEP -------------------------------------------------------------------------------------------------------
+
+        self.stepnumber += 1
+        print('reward',reward)
+
+        return state, reward, done, {}
+        
 
     def render(self):
         self.screen.fill((0, 0, 0))
@@ -288,7 +345,13 @@ if __name__ == "__main__":
                     input[1] = 1
 
         action = Action.from_tuple(input)
-        env.step(action)
+        state, reward, done, dic=env.step(action)
+        #stop if done
+        if done:
+            print('DONE')
+            raise Exception()
+        
+
        
 
         env.render()
