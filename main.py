@@ -239,13 +239,28 @@ class ParachutistEnv(Env):
         self.screen = pygame.display.set_mode((800, 600))
         self.clock = pygame.time.Clock()
         self.parachutist = Parachutist()
-        self.stepnumber = 0
-        self.game_over = False
+       
         self.island_pos=np.array([0,234])
         self.side_x_pos=np.array([-344,344])
+        self.action_space = [0,1,2,3]
+
+        self.stepnumber = 0
+        self.game_over = False
+        self.prev_shaping = None
 
     def reset(self):
-        pass
+        self.screen = pygame.display.set_mode((800, 600))
+        self.clock = pygame.time.Clock()
+        self.parachutist = Parachutist()
+        self.stepnumber = 0
+        self.game_over = False
+        self.prev_shaping = None
+
+        state=np.array([self.parachutist.position[0],self.parachutist.position[1],
+            self.parachutist.teta,self.parachutist.teta_dot,
+            self.parachutist.velocity[0],self.parachutist.velocity[1]])
+        
+        return state
 
     def step(self, action: Action) -> Tuple[Parachutist, float, bool, Mapping]:
         """
@@ -265,8 +280,8 @@ class ParachutistEnv(Env):
 
         #State variables for reward
         state=np.array([self.parachutist.position[0],self.parachutist.position[1],
-        self.parachutist.teta,self.parachutist.teta_dot,
-        self.parachutist.velocity[0],self.parachutist.velocity[1]])
+            self.parachutist.teta,self.parachutist.teta_dot,
+            self.parachutist.velocity[0],self.parachutist.velocity[1]])
 
         
 
@@ -281,7 +296,7 @@ class ParachutistEnv(Env):
         brokenleg = (
             (np.abs(self.parachutist.teta) > np.pi / 6 or speed > 10)
         ) and groundcontact
-        water= (groundcontact and (self.parachutist.position[0] < self.island_pos[0]-100 or self.parachutist.position[0] > self.island_pos[0]+100))
+        water= (groundcontact and (self.parachutist.position[0] < self.island_pos[0]-50 or self.parachutist.position[0] > self.island_pos[0]+50))
         outside = (self.parachutist.position[0] < self.side_x_pos[0] or self.parachutist.position[0] > self.side_x_pos[1])
         landed = (groundcontact and not brokenleg and not water)
         
@@ -295,19 +310,25 @@ class ParachutistEnv(Env):
             print("water", water)
             self.game_over = True
 
+       
+        print('distance',distance)
+        shaping = (
+            -speed - distance - self.parachutist.teta_dot - self.parachutist.teta
+
+        ) 
+        if self.prev_shaping is not None:
+            reward = shaping - self.prev_shaping
+        self.prev_shaping = shaping
+
+
         if self.game_over:
             done = True
-        else:
-            # reward shaping
-                 
-            if landed:
-                print("landed")
-                reward = 100
-                done = True
-
-        if done:
-            reward += - 2 * (speed + distance + np.abs(self.parachutist.teta) + np.abs(speed))
-
+            reward = -100
+        elif landed:
+            done = True
+            reward = 100
+            print("landed")
+           
 
         # END OF STEP -------------------------------------------------------------------------------------------------------
 
