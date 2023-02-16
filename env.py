@@ -24,17 +24,15 @@ class Action(Enum):
         if L[1] == 1:
             return Action.RIGHT
         return Action.NONE
-    
+
     def from_int(i: int) -> "Action":
-        if i == 1:
-            return Action.LEFT
-        if i == 2:
-            return Action.RIGHT
-        if i == 3:
-            return Action.BOTH
-        return Action.NONE
-
-
+            if i == 1:
+                return Action.LEFT
+            if i == 2:
+                return Action.RIGHT
+            if i == 3:
+                return Action.BOTH
+            return Action.NONE
 class Env(ABC):
     @abstractmethod
     def reset(self):
@@ -358,35 +356,3 @@ class ParachutistEnv(Env):
 
     def close(self):
         pass
-
-
-if __name__ == "__main__":
-    pygame.init()
-    env = ParachutistEnv()
-    # Set the wind of the environment:
-    env.parachutist.wind=np.array([4.,0.])
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
-
-            # detect if user presses arrow keys
-            input = [0, 0]
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    input[0] = 1
-                if event.key == pygame.K_RIGHT:
-                    input[1] = 1
-
-        action = Action.from_tuple(input)
-        state, reward, done, dic=env.step(action)
-        #stop if done
-        if done:
-            print('DONE')
-            raise Exception()
-        
-
-       
-
-        env.render()
