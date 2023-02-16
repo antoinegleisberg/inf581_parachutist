@@ -1,5 +1,7 @@
 import numpy as np
 from agent_baseline import *
+from test_agent import *
+from env import *
 
 
 class DiscreteAgent(Agent):
@@ -80,10 +82,16 @@ class QLearning_Agent(DiscreteAgent):
         return action
     
     
-    def train(self,env,alpha=0.1, alpha_factor=0.9995, gamma=0.99, num_episodes=1000,verbose=True):
+    def train(self,env=ParachutistEnv(pygame_used=False),alpha=0.1, alpha_factor=0.9995, gamma=0.99, num_episodes=1000,verbose=True):
+        env.parachutist.verbose=False
         for episode_index in range(num_episodes):
-            if verbose and episode_index % int(num_episodes/10) == 0:
-                print()
+            if verbose and episode_index % int(num_episodes/10) == 1:
+                try:
+                    env.reset()
+                    test_agent(self,env,env.parachutist.wind)
+                except:
+                    print("Failed to simulate the agent")
+                print("Episode "+str(episode_index)+"    nombre d'erreurs k:"+str(k))
             
             self.q_table_history.append(self.q_table.copy())
 
@@ -94,18 +102,30 @@ class QLearning_Agent(DiscreteAgent):
             S=env.reset()
             A=self.act(S)
             final=False
+            dS=self.convert_state_to_discrete_space(S)
             k=0
             
-            while not final and k<100:
+            while (not final) and k<100:
                 try:
-                    s2,R,final,_,_=env.step(A)
+                    s2,R,final,_=env.step(A)
                     a2=self.act(s2)
-                    self.q_table[S+[A]]+=alpha*(R+gamma*self.q_table[s2+[a2]]-self.q_table[S+[A]])
-                    S=s2
+                    ds2=self.convert_state_to_discrete_space(s2)
+                    self.q_table[dS+[A]]+=alpha*(R+gamma*self.q_table[ds2+[a2]]-self.q_table[dS+[A]])
+                    S=s2.copy()
+                    dS=ds2.copy()
                     A=a2
                 except:
                     # counting errors, if k>100 : stop
                     k+=1
             
                     
-        
+env=ParachutistEnv(pygame_used=True)
+QL=QLearning_Agent()
+QL.train(num_episodes=1000)
+# env=ParachutistEnv()
+# env.parachutist.verbose=False
+# s=env.reset()
+# a=QL.act(s)
+# s2,r,_,_=env.step(a)
+# print(s2,a,s,r)
+test_agent(QL,env,env.parachutist.wind)

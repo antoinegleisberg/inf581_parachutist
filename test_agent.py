@@ -43,4 +43,4 @@ def test_agent(agent, env: ParachutistEnv, vent=[0,0]):
 
     pygame.quit()
 
-test_agent(agent,env, vent)
+#test_agent(agent,env, vent)

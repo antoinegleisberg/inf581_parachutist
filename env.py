@@ -74,6 +74,8 @@ class Parachutist:
 
     wind: Vec = field(default=np.array([0, 0]), init=False)
     
+    verbose: bool=True # printing info
+    
     max_speed: float = 40
 
     def __post_init__(self):
@@ -167,8 +169,9 @@ class Parachutist:
 
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
-        print("velocity", self.velocity)
-        print("position", self.position)
+        if self.verbose:
+            print("velocity", self.velocity)
+            print("position", self.position)
     
     def apply_momentum(self):# with respect to axis going through middle top of the parachute (0,-60)
 
@@ -245,9 +248,12 @@ class Parachutist:
 class ParachutistEnv(Env):
     
 
-    def __init__(self):
-        self.screen = pygame.display.set_mode((800, 600))
-        self.clock = pygame.time.Clock()
+    def __init__(self,pygame_used=True):
+        
+        self.pygame_used=pygame_used
+        if pygame_used:
+            self.screen = pygame.display.set_mode((800, 600))
+            self.clock = pygame.time.Clock()
         self.parachutist = Parachutist()
        
         self.island_pos=np.array([0,234])
@@ -259,9 +265,15 @@ class ParachutistEnv(Env):
         self.prev_shaping = None
 
     def reset(self):
-        self.screen = pygame.display.set_mode((800, 600))
-        self.clock = pygame.time.Clock()
+        verbose=self.parachutist.verbose
+        
+        if self.pygame_used:
+            self.screen = pygame.display.set_mode((800, 600))
+            self.clock = pygame.time.Clock()
         self.parachutist = Parachutist()
+        
+        self.parachutist.verbose=verbose
+        
         self.stepnumber = 0
         self.game_over = False
         self.prev_shaping = None
@@ -314,14 +326,14 @@ class ParachutistEnv(Env):
 
         reward =0
 
-        if outside or brokenleg or water:
+        if outside or brokenleg or water and self.parachutist.verbose:
             print("outside", outside)
             print("brokenleg", brokenleg)
             print("water", water)
             self.game_over = True
 
-       
-        print('distance',distance)
+        if self.parachutist.verbose:
+            print('distance',distance)
         shaping = (
             -speed - distance - self.parachutist.teta_dot - self.parachutist.teta
 
@@ -337,13 +349,15 @@ class ParachutistEnv(Env):
         elif landed:
             done = True
             reward = 100
-            print("landed")
+            if self.parachutist.verbose:
+                print("landed")
            
 
         # END OF STEP -------------------------------------------------------------------------------------------------------
 
         self.stepnumber += 1
-        print('reward',reward)
+        if self.parachutist.verbose:
+            print('reward',reward)
 
         return state, reward, done, {}
         
