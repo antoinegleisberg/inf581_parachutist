@@ -397,12 +397,19 @@ class DiscreteAgent(Agent):
             discrete_state: List of indices of our discretized state space
         """
         pos0,pos1,theta,theta_dot,vel0,vel1=state
-        return [round((pos0+self.max_space0)/(2*self.N_space_grid*self.max_space0)), # Negative and positive pos0 so 2*max_space0 chunk size
+        discrete_state= [round((pos0+self.max_space0)/(2*self.N_space_grid*self.max_space0)), # Negative and positive pos0 so 2*max_space0 chunk size
                 round(pos1/(self.N_space_grid*self.max_space1)), # Only positive pos1
                 round((theta+self.max_theta)/(self.N_theta_grid*2*self.max_theta)),
                 round((theta_dot+self.max_theta_dot)/(self.N_theta_dot_grid*2*self.max_theta_dot)),
                 round((vel0+self.max_vel0)/(self.N_velocity_grid*2*self.max_vel0)),
                 round(vel1/(self.N_velocity_grid*self.max_vel1))]
+        
+        if (np.array(discrete_state)<0).any() or (np.array(discrete_state)>np.array([self.N_space_grid,self.N_space_grid,self.max_theta,self.max_theta_dot,self.max_vel0,self.max_vel1])).any():
+            print("ERROR: discrete indices out of bound")
+            print(discrete_state)
+            raise Exception()
+
+        return discrete_state
         
 
 class QLearning_Agent(DiscreteAgent):
