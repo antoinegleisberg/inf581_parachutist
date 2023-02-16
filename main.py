@@ -61,7 +61,7 @@ class Parachutist:
     teta_dot: float = field(default=0, init=False)
     position: Vec = field(default=np.array([0.0, 0.0]), init=False)
     velocity: Vec = field(default=np.array([0.0, 0.0]), init=False)
-    mass: float = field(default=1, init=False)
+    mass: float = field(default=2, init=False)
 
     time_step: float = field(default=0.1, init=False)
 
@@ -130,21 +130,21 @@ class Parachutist:
         #1st wing
         left_wing = self.parachute[1] - self.parachute[0]
         left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
-        left_wing_vel=np.dot(self.velocity+self.wind, left_normal)
+        left_wing_vel=np.dot(self.velocity-self.wind, left_normal)
         left_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2      
-        left_drag = left_drag * left_normal
+        left_drag = -left_drag * left_normal* np.sign(left_wing_vel)
 
         #2nd wing
         right_wing = self.parachute[3] - self.parachute[2]
         right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
-        right_wing_vel=np.dot(self.velocity+self.wind, right_normal)
+        right_wing_vel=np.dot(self.velocity-self.wind, right_normal)
         right_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
-        right_drag = right_drag * right_normal
+        right_drag = -right_drag * right_normal* np.sign(right_wing_vel)
 
         #center wing
         center_wing = self.parachute[2] - self.parachute[1]
         center_normal = np.array([center_wing[1], -center_wing[0]]) / np.linalg.norm(center_wing)
-        center_wing_vel=np.dot(self.velocity+self.wind, center_normal)
+        center_wing_vel=np.dot(self.velocity-self.wind, center_normal)
         center_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(center_wing_vel) ** 2
         center_drag = center_drag * center_normal
 
@@ -178,9 +178,9 @@ class Parachutist:
         #1st wing
         left_wing = self.parachute[1] - self.parachute[0]
         left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
-        left_wing_vel=np.dot(self.velocity+self.wind, left_normal)
+        left_wing_vel=np.dot(self.velocity-self.wind, left_normal)
         left_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2      
-        left_drag = left_drag * left_normal
+        left_drag = -left_drag * left_normal* np.sign(left_wing_vel)
 
         #moment of force
         left_r=(self.parachute[1] + self.parachute[0])/2 - (self.parachute[2] + self.parachute[1])/2
@@ -191,9 +191,9 @@ class Parachutist:
         #2nd wing
         right_wing = self.parachute[3] - self.parachute[2]
         right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
-        right_wing_vel=np.dot(self.velocity+self.wind, right_normal)
+        right_wing_vel=np.dot(self.velocity-self.wind, right_normal)
         right_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
-        right_drag = right_drag * right_normal
+        right_drag = -right_drag * right_normal* np.sign(right_wing_vel)
 
         #moment of force
         right_r=(self.parachute[3] + self.parachute[2])/2 -(self.parachute[2] + self.parachute[1])/2
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     pygame.init()
     env = ParachutistEnv()
     # Set the wind of the environment:
-    env.parachutist.wind=np.array([2.,0.])
+    env.parachutist.wind=np.array([4.,0.])
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
