@@ -76,6 +76,15 @@ class Parachutist:
     
     max_speed: float = 40
 
+    def reset(self):
+        """Resets the parachutist to its initial state."""
+        self.teta = 0
+        self.teta_dot = 0
+        self.position = np.array([0.0, 0.0])
+        self.velocity = np.array([0.0, 0.0])
+        self.parachute = self.default_parachute
+        self.strings = [(np.array([0, 0]), x) for x in self.parachute]
+
     def __post_init__(self):
         self.left_pulled_parachute = [
             np.array([-40, -25]),
@@ -155,20 +164,12 @@ class Parachutist:
         center_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(center_wing_vel) ** 2
         center_drag = center_drag * center_normal
 
-        if np.linalg.norm(self.velocity) > self.max_speed:
-            pass
-            print("Too fast !")
-            print("high velocity", self.velocity)
-            # self.velocity = self.velocity / np.linalg.norm(self.velocity)
-            # self.velocity = np.array([0.0, 0.0])
-            # return
-            raise Exception()
+    
 
 
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
-        print("velocity", self.velocity)
-        print("position", self.position)
+      
     
     def apply_momentum(self):# with respect to axis going through middle top of the parachute (0,-60)
 
@@ -211,11 +212,7 @@ class Parachutist:
         """
         no moment of force since force is perpendicular to the axis of rotation
         """
-        if np.linalg.norm(self.teta) > np.pi/4:
-            
-            print("Too much angle !")
-            print("high teta", self.teta)
-            raise Exception()
+        
         
         
 
@@ -321,7 +318,6 @@ class ParachutistEnv(Env):
             self.game_over = True
 
        
-        print('distance',distance)
         shaping = (
             -speed - distance - self.parachutist.teta_dot - self.parachutist.teta
 
@@ -343,7 +339,6 @@ class ParachutistEnv(Env):
         # END OF STEP -------------------------------------------------------------------------------------------------------
 
         self.stepnumber += 1
-        print('reward',reward)
 
         return state, reward, done, {}
         
