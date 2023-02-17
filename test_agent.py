@@ -5,23 +5,29 @@ import numpy as np
 from enum import Enum
 from env import *
 from agent_baseline import *
+from dqn_agent import *
 
+"""
+a code to test an agent in the environment
+the agent must have an act method that takes an observation and returns an action"""
 
 #PARAMETERS
 env=ParachutistEnv()
-vent=[10,0]
+env.parachutist.wind=[2,0]
 
 
 
 #AGENT WE WANT TO TEST 
-agent = LeftAgent(env)
+agent = DQN(env)
+agent.train(episodes=1,env=env)
 
 #LIVE TEST OF THE AGENT
-def test_agent(agent, env: ParachutistEnv, vent=[0,0]):
+def test_agent(agent, env: ParachutistEnv):
     pygame.init()
+    wind=env.parachutist.wind
     observation = env.reset()
     done = False
-    env.parachutist.wind=vent
+    env.parachutist.wind=wind
 
     while not done:
         for event in pygame.event.get():
@@ -43,4 +49,4 @@ def test_agent(agent, env: ParachutistEnv, vent=[0,0]):
 
     pygame.quit()
 
-test_agent(agent,env, vent)
+test_agent(agent,env)

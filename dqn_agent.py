@@ -9,6 +9,7 @@ import torch
 import copy
 from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
+from agent_baseline import *
 
 """DQN Agent
 """
@@ -64,7 +65,7 @@ class ReplayBuffer:
     
 
 # create a deep DQN agent
-class DQN():
+class DQN(Agent):
     def __init__(self, env):
         self.replay = ReplayBuffer()
         self.exploration_rate = EXPLORATION_MAX
@@ -75,7 +76,7 @@ class DQN():
 
 
 
-    def choose_action(self, observation):
+    def act(self, observation):
         if random.random() < self.exploration_rate:
             return np.random.choice(self.action_space)
 
@@ -141,4 +142,48 @@ class DQN():
 
     def returning_epsilon(self):
         return self.exploration_rate
-        
+    
+    def train(self,env:Env, episodes=50, sync_freq=10):
+        vent= env.parachutist.wind         
+
+        best_reward = -1000
+        average_reward = 0
+        j=0
+        for i in tqdm(range(1, episodes+1)):
+            state = env.reset()
+            env.parachutist.reset()
+            env.parachutist.wind=vent
+
+            score = 0
+            while True:
+                j+=1
+                action = self.act(state)
+                print(j)
+
+                # play action for 10 frames so that the agent can't change its action in a milli second
+                for _ in range(10):
+                    state_, reward, done, info = env.step(Action.from_int(action))
+                    state = torch.tensor(state).float()
+                    state_ = torch.tensor(state_).float()
+                    exp = (state, action, reward, state_, done)
+                    self.replay.add(exp)
+                    self.learn()
+
+                    state = state_
+                    score += reward
+
+                    if j % sync_freq == 0:
+                        self.network2.load_state_dict(self.network.state_dict())
+                    if done:
+                        break
+
+                if done:
+                    if score > best_reward:
+                        best_reward = score
+                    average_reward += score 
+                    if i%5==0:
+                        print("Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(i, average_reward/i, best_reward, score, agent.returning_epsilon()))
+                    print(state)
+                    break
+            
+      

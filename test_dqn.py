@@ -17,7 +17,7 @@ a code to test the DQN agent
 """
 
 
-EPISODES = 15
+EPISODES = 50
 sync_freq = 10
 
 
@@ -41,7 +41,7 @@ for i in tqdm(range(1, EPISODES+1)):
     score = 0
     while True:
         j+=1
-        action = agent.choose_action(state)
+        action = agent.act(state)
         print(j)
 
         # play action for 10 frames so that the agent can't change its action in a milli second
