@@ -1,4 +1,7 @@
 import numpy as np
+from agent_baseline import *
+from test_agent import *
+from env import *
 
 
 class DiscreteAgent(Agent):
@@ -24,8 +27,6 @@ class DiscreteAgent(Agent):
         self.max_space1=max_space1
         self.max_theta=max_theta
         self.max_theta_dot=max_theta_dot
-        
-        self.name="A Discrete Agent"
         
     
     def convert_state_to_discrete_space(self,state):
@@ -59,4 +60,72 @@ class QLearning_Agent(DiscreteAgent):
     Args:
         DiscreteAgent (_type_): _description_
     """
-    pass
+    def __init__(self,epsilon=0.8,grid=[10,8,1,8],max_values=[40,40,500,500,np.pi,10]):
+        self.grid=grid
+        self.max_values=max_values
+        DiscreteAgent.__init__(self,grid[0],grid[1],grid[2],grid[3],max_values[0],max_values[1],max_values[2],max_values[3],max_values[4],max_values[5])
+        
+        self.q_table=np.zeros(grid+[4])
+        self.epsilon=epsilon
+        
+        self.q_table_history=[]
+    
+    
+    def act(self,observation):
+        discrete_state=self.convert_state_to_discrete_space(observation)
+        p=np.random.rand()
+        if p<self.epsilon:
+            action=np.random.randint(5)
+        else:
+            action=np.argmax(self.q_table[discrete_state])
+
+        return action
+    
+    
+    def train(self,env=ParachutistEnv(pygame_used=False),alpha=0.1, alpha_factor=0.9995, gamma=0.99, num_episodes=1000,verbose=True):
+        env.parachutist.verbose=False
+        for episode_index in range(num_episodes):
+            if verbose and episode_index % int(num_episodes/10) == 1:
+                try:
+                    env.reset()
+                    test_agent(self,env,env.parachutist.wind)
+                except:
+                    print("Failed to simulate the agent")
+                print("Episode "+str(episode_index)+"    nombre d'erreurs k:"+str(k))
+            
+            self.q_table_history.append(self.q_table.copy())
+
+            # Update alpha
+            if alpha_factor is not None:
+                alpha = alpha * alpha_factor
+            
+            S=env.reset()
+            A=self.act(S)
+            final=False
+            dS=self.convert_state_to_discrete_space(S)
+            k=0
+            
+            while (not final) and k<100:
+                try:
+                    s2,R,final,_=env.step(A)
+                    a2=self.act(s2)
+                    ds2=self.convert_state_to_discrete_space(s2)
+                    self.q_table[dS+[A]]+=alpha*(R+gamma*self.q_table[ds2+[a2]]-self.q_table[dS+[A]])
+                    S=s2.copy()
+                    dS=ds2.copy()
+                    A=a2
+                except:
+                    # counting errors, if k>100 : stop
+                    k+=1
+            
+                    
+env=ParachutistEnv(pygame_used=True)
+QL=QLearning_Agent()
+QL.train(num_episodes=1000)
+# env=ParachutistEnv()
+# env.parachutist.verbose=False
+# s=env.reset()
+# a=QL.act(s)
+# s2,r,_,_=env.step(a)
+# print(s2,a,s,r)
+test_agent(QL,env,env.parachutist.wind)
