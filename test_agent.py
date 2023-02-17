@@ -13,7 +13,7 @@ the agent must have an act method that takes an observation and returns an actio
 
 #PARAMETERS
 env=ParachutistEnv()
-env.parachutist.wind=[2,0]
+env.parachutist.wind=Wind(constant_wind)
 
 
 

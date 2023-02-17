@@ -7,8 +7,8 @@ from env import *
 if __name__ == "__main__":
     pygame.init()
     env = ParachutistEnv()
+    env.parachutist.wind=Wind(linear_wind)
     # Set the wind of the environment:
-    env.parachutist.wind=np.array([4.,0.])
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
         action = Action.from_tuple(input)
         state, reward, done, dic=env.step(action)
+        print(reward)
         #stop if done
         if done:
             print('DONE')

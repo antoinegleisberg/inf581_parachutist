@@ -10,6 +10,7 @@ import copy
 from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
 from dqn_agent import *
+from wind import *
 
 """
 a code to test the DQN agent
@@ -17,7 +18,7 @@ a code to test the DQN agent
 """
 
 
-EPISODES = 50
+EPISODES = 1
 sync_freq = 10
 
 
@@ -36,7 +37,7 @@ j=0
 for i in tqdm(range(1, EPISODES+1)):
     state = env.reset()
     env.parachutist.reset()
-    env.parachutist.wind=np.array([2.,0.])
+    env.parachutist.wind=Wind(constant_wind)
 
     score = 0
     while True:
