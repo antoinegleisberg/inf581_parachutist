@@ -6,6 +6,7 @@ from enum import Enum
 from env import *
 from agent_baseline import *
 from dqn_agent import *
+from reinforce_agent import *
 
 """
 a code to test an agent in the environment
@@ -13,13 +14,18 @@ the agent must have an act method that takes an observation and returns an actio
 
 #PARAMETERS
 env=ParachutistEnv()
+env.parachutist.verbose=False
 env.parachutist.wind=Wind(constant_wind)
 
 
 
 #AGENT WE WANT TO TEST 
-agent = DQN(env)
-agent.train(episodes=1,env=env)
+agent = ReinforceAgent(env)
+agent.train(episodes=20,env=env)
+
+# ask in terminal if you want to test the agent
+test=input("Do you want to test the agent? (y/n) ")
+
 
 #LIVE TEST OF THE AGENT
 def test_agent(agent, env: ParachutistEnv):
@@ -38,7 +44,6 @@ def test_agent(agent, env: ParachutistEnv):
         action=Action.from_int(act)
 
 
-        print(action)
         # apply each action for 100 frames
 
         for _ in range(50):
@@ -50,3 +55,4 @@ def test_agent(agent, env: ParachutistEnv):
     pygame.quit()
 
 test_agent(agent,env)
+

@@ -158,7 +158,6 @@ class DQN(Agent):
             while True:
                 j+=1
                 action = self.act(state)
-                print(j)
 
                 # play action for 10 frames so that the agent can't change its action in a milli second
                 for _ in range(10):
@@ -182,7 +181,7 @@ class DQN(Agent):
                         best_reward = score
                     average_reward += score 
                     if i%5==0:
-                        print("Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(i, average_reward/i, best_reward, score, agent.returning_epsilon()))
+                        print("Episode {} Average Reward {} Best Reward {} Last Reward {}".format(i, average_reward/i, best_reward, score))
                     print(state)
                     break
             
