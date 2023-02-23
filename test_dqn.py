@@ -1,16 +1,9 @@
-import numpy as np
-from env import *
-from torch import nn
-from torch import optim
-import torch.nn.functional as F
-from collections import deque
-import random
+from env import ParachutistEnv, Action
+from wind import Wind, constant_wind
 import torch
-import copy
 from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
-from dqn_agent import *
-from wind import *
+from dqn_agent import DQN
 
 """
 a code to test the DQN agent
@@ -22,10 +15,9 @@ EPISODES = 1
 sync_freq = 10
 
 
-
-env=ParachutistEnv()
-action_space=env.action_space
-agent=DQN(env)
+env = ParachutistEnv()
+action_space = env.action_space
+agent = DQN(env)
 
 
 best_reward = -1000
@@ -33,15 +25,15 @@ average_reward = 0
 episode_number = []
 average_reward_number = []
 
-j=0
-for i in tqdm(range(1, EPISODES+1)):
+j = 0
+for i in tqdm(range(1, EPISODES + 1)):
     state = env.reset()
     env.parachutist.reset()
-    env.parachutist.wind=Wind(constant_wind)
+    env.parachutist.wind = Wind(constant_wind)
 
     score = 0
     while True:
-        j+=1
+        j += 1
         action = agent.act(state)
         print(j)
 
@@ -65,16 +57,19 @@ for i in tqdm(range(1, EPISODES+1)):
         if done:
             if score > best_reward:
                 best_reward = score
-            average_reward += score 
-            if i%5==0:
-                print("Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(i, average_reward/i, best_reward, score, agent.returning_epsilon()))
+            average_reward += score
+            if i % 5 == 0:
+                print(
+                    "Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(
+                        i, average_reward / i, best_reward, score, agent.returning_epsilon()
+                    )
+                )
             print(state)
             break
-            
-            
+
     episode_number.append(i)
-    average_reward_number.append(average_reward/i)
-            
+    average_reward_number.append(average_reward / i)
+
 
 plt.plot(episode_number, average_reward_number)
 plt.show()

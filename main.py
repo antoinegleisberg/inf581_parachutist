@@ -1,13 +1,12 @@
 import pygame
-import numpy as np
-from env import *
-
+from env import ParachutistEnv, Action
+from wind import Wind, linear_wind
 
 
 if __name__ == "__main__":
     pygame.init()
     env = ParachutistEnv()
-    env.parachutist.wind=Wind(linear_wind)
+    env.parachutist.wind = Wind(linear_wind)
     # Set the wind of the environment:
     while True:
         for event in pygame.event.get():
@@ -24,14 +23,11 @@ if __name__ == "__main__":
                     input[1] = 1
 
         action = Action.from_tuple(input)
-        state, reward, done, dic=env.step(action)
+        state, reward, done, dic = env.step(action)
         print(reward)
-        #stop if done
+        # stop if done
         if done:
-            print('DONE')
+            print("DONE")
             raise Exception()
-        
-
-       
 
         env.render()
