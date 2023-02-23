@@ -28,6 +28,8 @@ if __name__ == "__main__":
         # stop if done
         if done:
             print("DONE")
-            raise Exception()
+            break
 
         env.render()
+
+    pygame.quit()

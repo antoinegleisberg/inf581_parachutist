@@ -25,7 +25,8 @@ class Action(Enum):
             return Action.RIGHT
         return Action.NONE
 
-    def from_int(i: int) -> "Action":
+    @classmethod
+    def from_int(cls, i: int) -> "Action":
         if i == 1:
             return Action.LEFT
         if i == 2:
@@ -183,10 +184,10 @@ class Parachutist:
         gravity = np.array([0, 9.81])
 
         # moment of gravity
-        l = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
-        r = l * np.array([np.sin(self.teta), np.cos(self.teta)])
+        lever_length = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
+        r = lever_length * np.array([np.sin(self.teta), np.cos(self.teta)])
         # print dim of teta_offset
-        gravity_moment = -self.mass * gravity[1] * l * np.sin(self.teta)
+        gravity_moment = -self.mass * gravity[1] * lever_length * np.sin(self.teta)
 
         # 1st wing
         left_wing = self.parachute[1] - self.parachute[0]
@@ -226,8 +227,8 @@ class Parachutist:
         """Draws the parachutist on the screen."""
 
         # take angle teta into account: teta_offset on the body
-        l = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
-        teta_offset = np.array([l * np.sin(self.teta), -l * (1 - np.cos(self.teta))])
+        string_length = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
+        teta_offset = np.array([string_length * np.sin(self.teta), -string_length * (1 - np.cos(self.teta))])
         offset = self.position + np.array([400, 300])
         pygame.draw.lines(screen, (255, 255, 255), False, [coord + offset for coord in self.parachute], 10)
 
@@ -352,7 +353,7 @@ class ParachutistEnv(Env):
             if self.parachutist.verbose:
                 print("landed")
 
-        # END OF STEP -------------------------------------------------------------------------------------------------------
+        # END OF STEP --------------------------------------------------------------------------------------------------
 
         self.stepnumber += 1
         if self.parachutist.verbose:

@@ -1,15 +1,12 @@
 import numpy as np
-from env import *
+from env import ParachutistEnv, Action, Env
 from torch import nn
 from torch import optim
-import torch.nn.functional as F
-from collections import deque
-import random
 import torch
-import copy
-from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
-from agent_baseline import *
+from agent_baseline import Agent
+from torch.autograd import Variable
+from torch.distributions import Categorical
 
 """Reinforce Agent
 Inspired by:
@@ -18,14 +15,6 @@ https://github.com/coldhenry/RL-REINFORCE-Pytorch/blob/main/REINFORCE_continuous
 
 
 """
-import numpy as np
-from matplotlib import pyplot as plt
-
-import torch
-import torch.nn as nn
-from torch import optim
-from torch.autograd import Variable
-from torch.distributions import Categorical
 
 env = ParachutistEnv()
 env.parachutist.verbose = False
@@ -37,7 +26,6 @@ env.parachutist.verbose = False
 
 gamma = 0.99
 batch_size = 500
-
 
 
 class Policy(nn.Module):
@@ -54,15 +42,15 @@ class Policy(nn.Module):
         model = torch.nn.Sequential(self.l1, nn.ReLU(), self.l2, nn.Softmax(dim=-1))
         return model(x)
 
-class ReinforceAgent(Agent):
 
-    def __init__(self, env:Env):
+class ReinforceAgent(Agent):
+    def __init__(self, env: Env):
         super().__init__(env)
         self.policy = Policy()
         self.policy.optimizer = optim.Adam(self.policy.parameters(), lr=1e-3)
         self.action_space = env.action_space
 
-    def predict(self,state):
+    def predict(self, state):
 
         action_pb = self.policy(Variable(state))
         dist = Categorical(action_pb)
@@ -71,8 +59,7 @@ class ReinforceAgent(Agent):
 
         return action, action_pb, log_pb
 
-
-    def discounted_reward(self,rewards, gamma=0.9):
+    def discounted_reward(self, rewards, gamma=0.9):
 
         r = []
         for t in range(1, len(rewards) + 1):
@@ -85,7 +72,7 @@ class ReinforceAgent(Agent):
         action, _, _ = self.predict(torch.FloatTensor(state))
         return action.numpy()
 
-    def train(self,env:Env,episodes=100):
+    def train(self, env: Env, episodes=100):
 
         plot_reward = []
         for eps in range(episodes):
@@ -101,14 +88,12 @@ class ReinforceAgent(Agent):
 
             log_sum = 0
 
-    
-
             while batch_count < batch_size:
 
                 # update count
 
                 action, _, log_pb = self.predict(torch.FloatTensor(s_curr))
-                for i in range (50):
+                for i in range(50):
                     batch_count += 1
 
                     log_sum += log_pb
@@ -128,8 +113,8 @@ class ReinforceAgent(Agent):
                     traj_count += 1
 
                     # discounted reward of a trajectory
-                    batch_log_pb=log_sum
-                    batch_reward=self.discounted_reward(rewards, gamma)
+                    batch_log_pb = log_sum
+                    batch_reward = self.discounted_reward(rewards, gamma)
 
                     total_rewards += sum(rewards)
 
@@ -138,8 +123,6 @@ class ReinforceAgent(Agent):
                     log_sum = 0
                     done = False
                     break
-       
-
 
             loss = batch_reward * batch_log_pb
             loss = -loss / traj_count
@@ -151,7 +134,9 @@ class ReinforceAgent(Agent):
             mean_reward = total_rewards / traj_count
             print(
                 "Episode: {} / Avg. last {}: {:.2f}".format(
-                    eps, batch_size, mean_reward, 
+                    eps,
+                    batch_size,
+                    mean_reward,
                 )
             )
             # if len(plot_reward) > 0:
