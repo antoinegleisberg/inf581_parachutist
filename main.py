@@ -1,12 +1,12 @@
 import pygame
 from env import ParachutistEnv, Action
-from wind import Wind, linear_wind
+from wind import Wind, linear_wind, perlin_noise_wind
 
 
 if __name__ == "__main__":
     pygame.init()
     env = ParachutistEnv()
-    env.parachutist.wind = Wind(linear_wind)
+    env.parachutist.wind = Wind(perlin_noise_wind)
     # Set the wind of the environment:
     while True:
         for event in pygame.event.get():
