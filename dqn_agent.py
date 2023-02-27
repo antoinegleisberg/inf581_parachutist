@@ -1,13 +1,13 @@
 import numpy as np
-from env import Env, Action
-from torch import nn
-from torch import optim
+import torch
+from torch import nn, optim
 import torch.nn.functional as F
 from collections import deque
 import random
-import torch
 import copy
 from tqdm.notebook import tqdm
+
+from env import Env, Action
 from agent_baseline import Agent
 
 """DQN Agent

@@ -1,31 +1,40 @@
 import pygame
 from env import ParachutistEnv, Action
-from wind import Wind, linear_wind, perlin_noise_wind
+
+
+def check_pygame_exit(event: pygame.event.Event) -> None:
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        exit()
+
+
+def get_input(event) -> None:
+    input = [0, 0]
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_LEFT:
+            input[0] = 1
+        if event.key == pygame.K_RIGHT:
+            input[1] = 1
+        if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+            input[0] = 1
+            input[1] = 1
+    return input
 
 
 if __name__ == "__main__":
     pygame.init()
     env = ParachutistEnv()
-    env.parachutist.wind = Wind(perlin_noise_wind)
-    # Set the wind of the environment:
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
+            # detect if user closes window
+            check_pygame_exit(event)
 
             # detect if user presses arrow keys
-            input = [0, 0]
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    input[0] = 1
-                if event.key == pygame.K_RIGHT:
-                    input[1] = 1
+            input = get_input(event)
 
         action = Action.from_tuple(input)
         state, reward, done, dic = env.step(action)
-        print(reward)
-        # stop if done
+
         if done:
             print("DONE")
             break

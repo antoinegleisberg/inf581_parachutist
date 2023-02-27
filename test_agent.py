@@ -1,4 +1,5 @@
 import pygame
+
 from env import ParachutistEnv, Action
 from wind import Wind, constant_wind
 from reinforce_agent import ReinforceAgent

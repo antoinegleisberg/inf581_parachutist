@@ -1,8 +1,9 @@
-from env import ParachutistEnv, Action
-from wind import Wind, constant_wind
 import torch
 from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
+
+from env import ParachutistEnv, Action
+from wind import Wind, constant_wind
 from dqn_agent import DQN
 
 """

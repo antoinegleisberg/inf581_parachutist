@@ -1,12 +1,12 @@
 import numpy as np
-from env import ParachutistEnv, Action, Env
-from torch import nn
-from torch import optim
 import torch
-from matplotlib import pyplot as plt
-from agent_baseline import Agent
+from torch import nn, optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
+from matplotlib import pyplot as plt
+
+from env import ParachutistEnv, Action, Env
+from agent_baseline import Agent
 
 """Reinforce Agent
 Inspired by:

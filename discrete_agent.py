@@ -1,4 +1,5 @@
 import numpy as np
+
 from agent_baseline import Agent
 from test_agent import test_agent
 from env import ParachutistEnv
