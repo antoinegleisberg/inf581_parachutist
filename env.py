@@ -7,6 +7,10 @@ from enum import Enum
 
 from wind import Wind, perlin_noise_wind
 
+
+VERBOSE = False
+ENV_DIM = (800, 600)
+
 Vec = np.ndarray
 
 
@@ -59,7 +63,7 @@ class Env(ABC):
 class ParachutistEnvParams:
     start_closed: bool = True
 
-    random_position_start: bool = True
+    random_position_start: bool = False
     random_velocity_start: bool = False
     random_angle_start: bool = False
     random_angle_velocity_start: bool = False
@@ -67,6 +71,15 @@ class ParachutistEnvParams:
     time_step: float = 0.1
 
     wind: Wind = Wind(perlin_noise_wind)
+
+    position_initial_x_bounds = [-100, 100]
+    position_initial_y_bounds = [-200, 0]
+
+    velocity_initial_x_bounds = [-10, 10]
+    velocity_initial_y_bounds = [-10, 10]
+
+    angle_initial_bounds = [-np.pi / 4, np.pi / 4]
+    angle_velocity_initial_bounds = [-np.pi / 10, np.pi / 10]
 
 
 class Parachutist:
@@ -104,43 +117,45 @@ class Parachutist:
             np.array([5, -60]),
             np.array([40, -25]),
         ]
-        if params.start_closed:
-            self.parachute: List[Vec] = self.closed_parachute
-        else:
-            self.parachute: List[Vec] = self.default_parachute
-        self.body: List[Vec] = [np.array([-5, -10]), np.array([5, -10]), np.array([5, 10]), np.array([-5, 10])]
-        self.strings: List[Tuple[Vec, Vec]] = [(np.array([0, 0]), x) for x in self.parachute]
 
-        self.teta: float = 0 if not params.random_angle_start else np.random.uniform(-np.pi / 4, np.pi / 4)
-        self.teta_dot: float = (
-            0 if not params.random_angle_velocity_start else np.random.uniform(-np.pi / 10, np.pi / 10)
-        )
-        self.position: Vec = (
-            np.array([0.0, 0.0]) if not params.random_position_start else np.random.uniform(-100, 100, 2)
-        )
-        self.velocity: Vec = np.array([0.0, 0.0]) if not params.random_velocity_start else np.random.uniform(-10, 10, 2)
+        self.body: List[Vec] = [np.array([-5, -10]), np.array([5, -10]), np.array([5, 10]), np.array([-5, 10])]
+
+        self.params = params
         self.mass: float = 2
+        self.wind: Wind = params.wind
+        self.max_speed: float = 40
 
         self.time_step: float = 0.1
         self.time: float = 0
 
-        self.wind: Wind = params.wind
-
-        self.verbose: bool = False
-
-        self.max_speed: float = 40
-
-        self.params = params
+        self.reset()
 
     def reset(self):
         """Resets the parachutist to its initial state."""
-        # TODO need correction according to the params
-        self.teta = 0
-        self.teta_dot = 0
-        self.position = np.array([0.0, 0.0])
-        self.velocity = np.array([0.0, 0.0])
-        self.parachute = self.default_parachute
-        self.strings = [(np.array([0, 0]), x) for x in self.parachute]
+        if self.params.start_closed:
+            self.parachute: List[Vec] = self.closed_parachute
+        else:
+            self.parachute: List[Vec] = self.default_parachute
+
+        self.strings: List[Tuple[Vec, Vec]] = [(np.array([0, 0]), x) for x in self.parachute]
+
+        self.teta: float = 0
+        if self.params.random_angle_start:
+            self.teta: float = np.random.uniform(*self.params.angle_initial_bounds)
+
+        self.teta_dot: float = 0
+        if self.params.random_angle_velocity_start:
+            self.teta_dot: float = np.random.uniform(*self.params.angle_velocity_initial_bounds)
+
+        self.position: Vec = np.array([0.0, 0.0])
+        if self.params.random_position_start:
+            self.position[0] = np.random.uniform(*self.params.position_initial_x_bounds)
+            self.position[1] = np.random.uniform(*self.params.position_initial_y_bounds)
+
+        self.velocity: Vec = np.array([0.0, 0.0])
+        if self.params.random_velocity_start:
+            self.velocity[0] = np.random.uniform(*self.params.velocity_initial_x_bounds)
+            self.velocity[1] = np.random.uniform(*self.params.velocity_initial_y_bounds)
 
     def pull(self, action: Action):
         """Pulls the parachute."""
@@ -198,9 +213,10 @@ class Parachutist:
 
         self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
         self.position += self.velocity * self.time_step
-        if self.verbose:
-            print("velocity", self.velocity)
-            print("position", self.position)
+
+        if VERBOSE:
+            print(f"velocity: {self.velocity}")
+            print(f"position: {self.position}")
 
     def apply_momentum(self):  # with respect to axis going through middle top of the parachute (0,-60)
 
@@ -211,7 +227,6 @@ class Parachutist:
         # moment of gravity
         lever_length = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
         r = lever_length * np.array([np.sin(self.teta), np.cos(self.teta)])
-        # print dim of teta_offset
         gravity_moment = -self.mass * gravity[1] * lever_length * np.sin(self.teta)
 
         # 1st wing
@@ -258,7 +273,7 @@ class Parachutist:
         # take angle teta into account: teta_offset on the body
         string_length = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
         teta_offset = np.array([string_length * np.sin(self.teta), -string_length * (1 - np.cos(self.teta))])
-        offset = self.position + np.array([400, 300])
+        offset = self.position + np.array([ENV_DIM[0] / 2, ENV_DIM[1] / 2])
         pygame.draw.lines(screen, (255, 255, 255), False, [coord + offset for coord in self.parachute], 10)
 
         pygame.draw.ellipse(screen, (255, 255, 255), pygame.Rect((self.body + teta_offset + offset)[0], (10, 20)))
@@ -274,7 +289,7 @@ class ParachutistEnv(Env):
 
         self.pygame_used = pygame_used
         if pygame_used:
-            self.screen = pygame.display.set_mode((800, 600))
+            self.screen = pygame.display.set_mode(ENV_DIM)
             self.clock = pygame.time.Clock()
         self.parachutist = Parachutist()
 
@@ -288,14 +303,11 @@ class ParachutistEnv(Env):
         self.prev_shaping = None
 
     def reset(self):
-        verbose = self.parachutist.verbose
-
         if self.pygame_used:
-            self.screen = pygame.display.set_mode((800, 600))
+            self.screen = pygame.display.set_mode(ENV_DIM)
             self.clock = pygame.time.Clock()
-        self.parachutist = Parachutist()
 
-        self.parachutist.verbose = verbose
+        self.parachutist.reset()
 
         self.stepnumber = 0
         self.parachutist.time = 0
@@ -333,14 +345,13 @@ class ParachutistEnv(Env):
 
         reward = 0
 
-        if (outside or brokenleg or water) and self.parachutist.verbose:
-            print("outside", outside)
-            print("brokenleg", brokenleg)
-            print("water", water)
+        if outside or brokenleg or water:
+            print(f"outside: {outside}, brokenleg: {brokenleg}, water: {water}")
             self.game_over = True
 
-        if self.parachutist.verbose:
-            print("distance", distance)
+        if VERBOSE:
+            print(f"distance: {distance}")
+
         shaping = -speed - distance - self.parachutist.teta_dot - self.parachutist.teta
         if self.prev_shaping is not None:
             reward = shaping - self.prev_shaping
@@ -348,10 +359,10 @@ class ParachutistEnv(Env):
 
         if self.game_over:
             reward = -100
+            print("game over")
         elif self.landed:
             reward = 100
-            if self.parachutist.verbose:
-                print("landed")
+            print("landed")
 
         return reward
 
@@ -384,12 +395,12 @@ class ParachutistEnv(Env):
         )
 
         reward = self.reward()
-        if self.parachutist.verbose:
+        if VERBOSE:
             print(reward)
 
         self.stepnumber += 1
         self.parachutist.time = self.stepnumber * self.parachutist.time_step
-        if self.parachutist.verbose:
+        if VERBOSE:
             print("reward", reward)
 
         done = self.game_over or self.landed
