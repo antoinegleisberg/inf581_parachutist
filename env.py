@@ -61,6 +61,8 @@ class Env(ABC):
 
 @dataclass
 class ParachutistEnvParams:
+    continuous: bool = True
+
     start_closed: bool = True
 
     random_position_start: bool = False
@@ -124,8 +126,9 @@ class Parachutist:
         self.mass: float = 2
         self.wind: Wind = params.wind
         self.max_speed: float = 40
+        self.is_continuous: bool = params.continuous
 
-        self.time_step: float = 0.1
+        self.time_step: float = params.time_step
         self.time: float = 0
 
         self.reset()
@@ -157,8 +160,18 @@ class Parachutist:
             self.velocity[0] = np.random.uniform(*self.params.velocity_initial_x_bounds)
             self.velocity[1] = np.random.uniform(*self.params.velocity_initial_y_bounds)
 
-    def pull(self, action: Action):
+    def pull(self, action: Tuple[float, float]):
         """Pulls the parachute."""
+        if self.is_continuous:
+            # check if action is an Action
+
+            self._continuous_pull(action)
+        else:
+            if not isinstance(action, Action):
+                action = Action.from_tuple((int(action[0]), int(action[1])))
+            self._discrete_pull(action)
+
+    def _discrete_pull(self, action: Action):
         left = action == Action.LEFT or action == Action.BOTH
         right = action == Action.RIGHT or action == Action.BOTH
 
@@ -172,6 +185,31 @@ class Parachutist:
             self.parachute = self.right_pulled_parachute
         elif not right and not left and not closed_parachute:
             self.parachute = self.default_parachute
+
+        self.strings = [(np.array([0, 0]), x) for x in self.parachute]
+
+    def _continuous_pull(self, action: Tuple[float, float]):
+        print(f"action: {action}")
+        left, right = action
+        left = np.clip(left, 0, 1)
+        right = np.clip(right, 0, 1)
+
+        # if the parachute is closed, we open it
+        closed_parachute = np.array_equal(self.parachute, self.closed_parachute)
+        if (left != 0 or right != 0) and closed_parachute:
+            self.parachute = self.default_parachute
+            self.strings = [(np.array([0, 0]), x) for x in self.parachute]
+            return
+
+        left_position = left * self.left_pulled_parachute[0] + (1 - left) * self.right_pulled_parachute[0]
+        right_position = right * self.right_pulled_parachute[3] + (1 - right) * self.left_pulled_parachute[3]
+
+        self.parachute = [
+            left_position,
+            self.default_parachute[1],
+            self.default_parachute[2],
+            right_position,
+        ]
 
         self.strings = [(np.array([0, 0]), x) for x in self.parachute]
 
