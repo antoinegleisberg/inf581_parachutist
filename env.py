@@ -5,7 +5,7 @@ from typing import List, Tuple, Mapping
 import numpy as np
 from enum import Enum
 
-from wind import Wind, perlin_noise_wind
+from wind import Wind, perlin_noise_wind, constant_wind, linear_wind
 
 
 VERBOSE = False
@@ -72,7 +72,7 @@ class ParachutistEnvParams:
 
     time_step: float = 0.1
 
-    wind: Wind = Wind(perlin_noise_wind)
+    wind: Wind = Wind(linear_wind)
 
     position_initial_x_bounds = [-100, 100]
     position_initial_y_bounds = [-200, 0]
@@ -90,10 +90,10 @@ class Parachutist:
     def __init__(self, params: ParachutistEnvParams = ParachutistEnvParams()):
         # Relative coordinates of the elements of the parachutist.
         self.closed_parachute: List[Vec] = [
-            np.array([-5, 0]),
-            np.array([-2, -5]),
-            np.array([2, -5]),
-            np.array([5, 0]),
+            np.array([-1, 0]),
+            np.array([-2, -2]),
+            np.array([2, -2]),
+            np.array([1, 0]),
         ]
         self.default_parachute: List[Vec] = [
             np.array([-45, -55]),
@@ -121,12 +121,13 @@ class Parachutist:
         ]
 
         self.body: List[Vec] = [np.array([-5, -10]), np.array([5, -10]), np.array([5, 10]), np.array([-5, 10])]
-
         self.params = params
         self.mass: float = 2
         self.wind: Wind = params.wind
-        self.max_speed: float = 40
+        self.max_speed: float = 400
         self.is_continuous: bool = params.continuous
+
+
 
         self.time_step: float = params.time_step
         self.time: float = 0
@@ -197,20 +198,21 @@ class Parachutist:
         # if the parachute is closed, we open it
         closed_parachute = np.array_equal(self.parachute, self.closed_parachute)
         if (left != 0 or right != 0) and closed_parachute:
+            print("opening parachute")
             self.parachute = self.default_parachute
             self.strings = [(np.array([0, 0]), x) for x in self.parachute]
             return
-
-        left_position = left * self.left_pulled_parachute[0] + (1 - left) * self.right_pulled_parachute[0]
-        right_position = right * self.right_pulled_parachute[3] + (1 - right) * self.left_pulled_parachute[3]
-
+        if left == 0 and right == 0 and closed_parachute:
+            return
+        left_position = left * self.left_pulled_parachute[0] + (1 - left) * self.default_parachute[0]
+        right_position = right * self.right_pulled_parachute[3] + (1 - right) * self.default_parachute[3]
+       
         self.parachute = [
             left_position,
             self.default_parachute[1],
             self.default_parachute[2],
             right_position,
         ]
-
         self.strings = [(np.array([0, 0]), x) for x in self.parachute]
 
     def apply_forces(self):
@@ -220,7 +222,11 @@ class Parachutist:
         gravity = np.array([0, 9.81])
 
         air_volumic_mass = 1.292
-        C = 0.47
+        closed_parachute = np.array_equal(self.parachute, self.closed_parachute)
+        if closed_parachute:
+            C = 0.1#less friction
+        else:
+            C = 0.5
 
         # 1st wing
         left_wing = self.parachute[1] - self.parachute[0]
