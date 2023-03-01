@@ -9,6 +9,7 @@ from tqdm.notebook import tqdm
 
 from env import Env, Action
 from agent_baseline import Agent
+from matplotlib import pyplot as plt
 
 """DQN Agent
 """

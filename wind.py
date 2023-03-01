@@ -10,13 +10,13 @@ def constant_wind(x, y, t=0, seed=1) -> List:
 
 def linear_wind(x, y, t=0, seed=1) -> List:
     """Return a wind vector that is linear in y"""
-    return [(250-y)/12.5, 0.0]
+    return [(250-y)/12.5-10, 0.0]
 
 def perlin_noise_wind(x, y, t=0, seed=1) -> List:
     """Return a horizontal wind vector subject to perlin noise"""
     time_reduction_factor = 50
     t /= time_reduction_factor
-    force = 50
+    force = 100
     out = [0, 0]
     n_layers_of_noise = 4
     xdim, ydim = 700, 700  # dimensions of the environment (overestimated)
@@ -36,6 +36,10 @@ def perlin_noise_wind(x, y, t=0, seed=1) -> List:
 #     noise = PerlinNoise(octaves=int(2 ** (i + 2)), seed=seed)
 #     pic += force * np.array([[noise([i / xpix, j / ypix]) for j in range(xpix)] for i in range(ypix)]) * 1 / 2 ** (i)
 # plt.matshow(pic)
+# cbar=plt.colorbar()
+# cbar.set_label("Wind horizontal speed")
+# plt.title("Wind map with a Perlin noise wind")
+# plt.show()
 
 
 class Wind:
