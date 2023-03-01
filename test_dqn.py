@@ -1,16 +1,10 @@
-import numpy as np
-from env import *
-from torch import nn
-from torch import optim
-import torch.nn.functional as F
-from collections import deque
-import random
 import torch
-import copy
 from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
-from dqn_agent import *
-from wind import *
+
+from env import ParachutistEnv, Action
+from wind import Wind, constant_wind
+from dqn_agent import DQN
 
 """
 a code to test the DQN agent
@@ -22,10 +16,9 @@ EPISODES = 200
 sync_freq = 10
 
 
-
-env=ParachutistEnv()
-action_space=env.action_space
-agent=DQN(env)
+env = ParachutistEnv()
+action_space = env.action_space
+agent = DQN(env)
 
 
 best_reward = -1000
@@ -43,7 +36,7 @@ for i in tqdm(range(1, EPISODES+1)):
 
     score = 0
     while True:
-        j+=1
+        j += 1
         action = agent.act(state)
         print(j)
 
@@ -74,8 +67,7 @@ for i in tqdm(range(1, EPISODES+1)):
                 print("Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(i, average_reward/i, best_reward, score, agent.returning_epsilon()))
             print(state)
             break
-            
-            
+
     episode_number.append(i)
     average_reward_number.append(average_reward)
     plot_success.append(success/i)
