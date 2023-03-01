@@ -139,6 +139,7 @@ class DQN(Agent):
 
     def train(self, env: Env, episodes=50, sync_freq=10):
         vent = env.parachutist.wind
+        print("continuous", env.parachutist.is_continuous)
 
         best_reward = -1000
         average_reward = 0
@@ -148,9 +149,7 @@ class DQN(Agent):
         plot_success = []
         for eps in tqdm(range(1, episodes+1)):
             state = env.reset()
-            env.parachutist.reset()
-            env.parachutist.wind = vent
-
+            
             score = 0
             while True:
                 j += 1
