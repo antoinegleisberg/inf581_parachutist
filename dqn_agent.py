@@ -149,7 +149,10 @@ class DQN(Agent):
         best_reward = -1000
         average_reward = 0
         j=0
-        for i in tqdm(range(1, episodes+1)):
+        success=0
+        plot_rewards = []
+        plot_success = []
+        for eps in tqdm(range(1, episodes+1)):
             state = env.reset()
             env.parachutist.reset()
             env.parachutist.wind=vent
@@ -160,7 +163,7 @@ class DQN(Agent):
                 action = self.act(state)
 
                 # play action for 10 frames so that the agent can't change its action in a milli second
-                for _ in range(10):
+                for _ in range(30):
                     state_, reward, done, info = env.step(Action.from_int(action))
                     state = torch.tensor(state).float()
                     state_ = torch.tensor(state_).float()
@@ -180,9 +183,25 @@ class DQN(Agent):
                     if score > best_reward:
                         best_reward = score
                     average_reward += score 
-                    if i%5==0:
-                        print("Episode {} Average Reward {} Best Reward {} Last Reward {}".format(i, average_reward/i, best_reward, score))
+                    if reward==100:
+                        success+=1
+                    plot_rewards.append(score)
+                    plot_success.append(success/eps)
+
+                    if eps%5==0:
+                        print("Episode {} Average Reward {} Best Reward {} Last Reward {}".format(eps, average_reward/eps, best_reward, score))
                     print(state)
                     break
-            
+        episode_number = np.arange(1, episodes+1)
+        plt.plot(episode_number, plot_rewards)
+        plt.xlabel('Episode')
+        plt.ylabel('Episode Reward')
+        plt.title('DQN Reward during training')
+        plt.show()
+
+        plt.plot(episode_number, plot_success)
+        plt.xlabel('Episode')
+        plt.ylabel('Success rate since beginning')
+        plt.title('DQN Average success rate during training')
+        plt.show()   
       
