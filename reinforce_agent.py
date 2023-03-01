@@ -43,15 +43,15 @@ batch_size = 500
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-
-        num_hidden = 32
-
+        num_hidden = 24
+        num_hidden2=12
         self.l1 = nn.Linear(6, num_hidden)
-        self.l2 = nn.Linear(num_hidden, 4)
+        self.l2= nn.Linear(num_hidden,num_hidden2)
+        self.l3 = nn.Linear(num_hidden2, 4)
 
     def forward(self, x):
         # fully connected model
-        model = torch.nn.Sequential(self.l1, nn.ReLU(), self.l2, nn.Softmax(dim=-1))
+        model = torch.nn.Sequential(self.l1, nn.ReLU(), self.l2,nn.ReLU(),self.l3, nn.Softmax(dim=-1))
         return model(x)
 
 class ReinforceAgent(Agent):
@@ -88,8 +88,10 @@ class ReinforceAgent(Agent):
     def train(self,env:Env,episodes=100):
 
         plot_reward = []
-        for eps in range(episodes):
+        plot_success = []
+        success = 0
 
+        for eps in range(1,episodes+1):
             total_rewards = 0
             batch_count = 0
             traj_count = 0
@@ -103,13 +105,14 @@ class ReinforceAgent(Agent):
 
     
 
-            while batch_count < batch_size:
+            while True:#batch_count < batch_size:
 
                 # update count
 
                 action, _, log_pb = self.predict(torch.FloatTensor(s_curr))
-                for i in range (50):
-                    batch_count += 1
+                print(Action.from_int(action.numpy()))
+                for i in range (30):
+                    #batch_count += 1
 
                     log_sum += log_pb
                     s_next, reward, done, _ = env.step(Action.from_int(action.numpy()))
@@ -120,7 +123,7 @@ class ReinforceAgent(Agent):
                     if done:
                         break
 
-                if done or batch_count >= batch_size:
+                if done: #or batch_count >= batch_size:
 
                     s_curr = env.reset()
                     env.parachutist.reset()
@@ -140,7 +143,8 @@ class ReinforceAgent(Agent):
                     break
        
 
-
+            if reward==100:
+                success+=1
             loss = batch_reward * batch_log_pb
             loss = -loss / traj_count
 
@@ -154,17 +158,21 @@ class ReinforceAgent(Agent):
                     eps, batch_size, mean_reward, 
                 )
             )
-            # if len(plot_reward) > 0:
-            #     if plot_reward[-1] - mean_reward < 0:
-            #         torch.save(policy.state_dict(), 'reinforce_model_attempt2.pkl')
+          
             plot_reward.append(mean_reward)
+            plot_success.append(success/eps)
 
-        t = np.arange(0, episodes, 1)
-        plt.figure(figsize=(9, 9))
+
+        t = np.arange(1, episodes+1, 1)
+      
         plt.plot(t, plot_reward)
-        # plt.legend(["g = 0.9","g = 0.95","g = 0.99"], fontsize=15)
-        plt.xlabel("Episodes", fontsize=15)
-        plt.ylabel("Avg. Reward", fontsize=15)
-        plt.title("REINFORCE", fontsize=20)
+        plt.xlabel('Episode')
+        plt.ylabel('Episode Reward')
+        plt.title('REINFORCE Reward during training')
+        plt.show()
 
+        plt.plot(t, plot_success)
+        plt.xlabel('Episode')
+        plt.ylabel('Success rate since beginning')
+        plt.title('REINFORCE Average success rate during training')
         plt.show()
