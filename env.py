@@ -120,14 +120,17 @@ class Parachutist:
             np.array([40, -25]),
         ]
 
-        self.body: List[Vec] = [np.array([-5, -10]), np.array([5, -10]), np.array([5, 10]), np.array([-5, 10])]
+        self.body: List[Vec] = [
+            np.array([-5, -10]),
+            np.array([5, -10]),
+            np.array([5, 10]),
+            np.array([-5, 10]),
+        ]
         self.params = params
         self.mass: float = 2
         self.wind: Wind = params.wind
         self.max_speed: float = 400
         self.is_continuous: bool = params.continuous
-
-
 
         self.time_step: float = params.time_step
         self.time: float = 0
@@ -141,7 +144,9 @@ class Parachutist:
         else:
             self.parachute: List[Vec] = self.default_parachute
 
-        self.strings: List[Tuple[Vec, Vec]] = [(np.array([0, 0]), x) for x in self.parachute]
+        self.strings: List[Tuple[Vec, Vec]] = [
+            (np.array([0, 0]), x) for x in self.parachute
+        ]
 
         self.teta: float = 0
         if self.params.random_angle_start:
@@ -149,7 +154,9 @@ class Parachutist:
 
         self.teta_dot: float = 0
         if self.params.random_angle_velocity_start:
-            self.teta_dot: float = np.random.uniform(*self.params.angle_velocity_initial_bounds)
+            self.teta_dot: float = np.random.uniform(
+                *self.params.angle_velocity_initial_bounds
+            )
 
         self.position: Vec = np.array([0.0, 0.0])
         if self.params.random_position_start:
@@ -204,9 +211,15 @@ class Parachutist:
             return
         if left == 0 and right == 0 and closed_parachute:
             return
-        left_position = left * self.left_pulled_parachute[0] + (1 - left) * self.default_parachute[0]
-        right_position = right * self.right_pulled_parachute[3] + (1 - right) * self.default_parachute[3]
-       
+        left_position = (
+            left * self.left_pulled_parachute[0]
+            + (1 - left) * self.default_parachute[0]
+        )
+        right_position = (
+            right * self.right_pulled_parachute[3]
+            + (1 - right) * self.default_parachute[3]
+        )
+
         self.parachute = [
             left_position,
             self.default_parachute[1],
@@ -224,45 +237,67 @@ class Parachutist:
         air_volumic_mass = 1.292
         closed_parachute = np.array_equal(self.parachute, self.closed_parachute)
         if closed_parachute:
-            C = 0.1#less friction
+            C = 0.1  # less friction
         else:
             C = 0.5
 
         # 1st wing
         left_wing = self.parachute[1] - self.parachute[0]
-        left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
-        left_wing_vel = np.dot(
-            self.velocity - self.wind.get_wind(self.position[0], self.position[1], self.time), left_normal
+        left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(
+            left_wing
         )
-        left_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2
+        left_wing_vel = np.dot(
+            self.velocity
+            - self.wind.get_wind(self.position[0], self.position[1], self.time),
+            left_normal,
+        )
+        left_drag: float = (
+            0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2
+        )
         left_drag = -left_drag * left_normal * np.sign(left_wing_vel)
 
         # 2nd wing
         right_wing = self.parachute[3] - self.parachute[2]
-        right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
-        right_wing_vel = np.dot(
-            self.velocity - self.wind.get_wind(self.position[0], self.position[1], self.time), right_normal
+        right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(
+            right_wing
         )
-        right_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
+        right_wing_vel = np.dot(
+            self.velocity
+            - self.wind.get_wind(self.position[0], self.position[1], self.time),
+            right_normal,
+        )
+        right_drag: float = (
+            0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
+        )
         right_drag = -right_drag * right_normal * np.sign(right_wing_vel)
 
         # center wing
         center_wing = self.parachute[2] - self.parachute[1]
-        center_normal = np.array([center_wing[1], -center_wing[0]]) / np.linalg.norm(center_wing)
-        center_wing_vel = np.dot(
-            self.velocity - self.wind.get_wind(self.position[0], self.position[1], self.time), center_normal
+        center_normal = np.array([center_wing[1], -center_wing[0]]) / np.linalg.norm(
+            center_wing
         )
-        center_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(center_wing_vel) ** 2
+        center_wing_vel = np.dot(
+            self.velocity
+            - self.wind.get_wind(self.position[0], self.position[1], self.time),
+            center_normal,
+        )
+        center_drag: float = (
+            0.5 * air_volumic_mass * C * np.linalg.norm(center_wing_vel) ** 2
+        )
         center_drag = center_drag * center_normal
 
-        self.velocity += (gravity + (center_drag + left_drag + right_drag) / self.mass) * self.time_step
+        self.velocity += (
+            gravity + (center_drag + left_drag + right_drag) / self.mass
+        ) * self.time_step
         self.position += self.velocity * self.time_step
 
         if VERBOSE:
             print(f"velocity: {self.velocity}")
             print(f"position: {self.position}")
 
-    def apply_momentum(self):  # with respect to axis going through middle top of the parachute (0,-60)
+    def apply_momentum(
+        self,
+    ):  # with respect to axis going through middle top of the parachute (0,-60)
 
         air_volumic_mass = 1.292
         C = 0.47
@@ -275,28 +310,44 @@ class Parachutist:
 
         # 1st wing
         left_wing = self.parachute[1] - self.parachute[0]
-        left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(left_wing)
-        left_wing_vel = np.dot(
-            self.velocity - self.wind.get_wind(self.position[0], self.position[1], self.time), left_normal
+        left_normal = np.array([left_wing[1], -left_wing[0]]) / np.linalg.norm(
+            left_wing
         )
-        left_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2
+        left_wing_vel = np.dot(
+            self.velocity
+            - self.wind.get_wind(self.position[0], self.position[1], self.time),
+            left_normal,
+        )
+        left_drag: float = (
+            0.5 * air_volumic_mass * C * np.linalg.norm(left_wing_vel) ** 2
+        )
         left_drag = -left_drag * left_normal * np.sign(left_wing_vel)
 
         # moment of force
-        left_r = (self.parachute[1] + self.parachute[0]) / 2 - (self.parachute[2] + self.parachute[1]) / 2
+        left_r = (self.parachute[1] + self.parachute[0]) / 2 - (
+            self.parachute[2] + self.parachute[1]
+        ) / 2
         left_moment = -np.cross(left_r, left_drag)
 
         # 2nd wing
         right_wing = self.parachute[3] - self.parachute[2]
-        right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(right_wing)
-        right_wing_vel = np.dot(
-            self.velocity - self.wind.get_wind(self.position[0], self.position[1], self.time), right_normal
+        right_normal = np.array([right_wing[1], -right_wing[0]]) / np.linalg.norm(
+            right_wing
         )
-        right_drag: float = 0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
+        right_wing_vel = np.dot(
+            self.velocity
+            - self.wind.get_wind(self.position[0], self.position[1], self.time),
+            right_normal,
+        )
+        right_drag: float = (
+            0.5 * air_volumic_mass * C * np.linalg.norm(right_wing_vel) ** 2
+        )
         right_drag = -right_drag * right_normal * np.sign(right_wing_vel)
 
         # moment of force
-        right_r = (self.parachute[3] + self.parachute[2]) / 2 - (self.parachute[2] + self.parachute[1]) / 2
+        right_r = (self.parachute[3] + self.parachute[2]) / 2 - (
+            self.parachute[2] + self.parachute[1]
+        ) / 2
         right_moment = -np.cross(right_r, right_drag)
 
         # center wing~
@@ -316,13 +367,34 @@ class Parachutist:
 
         # take angle teta into account: teta_offset on the body
         string_length = np.linalg.norm((self.parachute[2] + self.parachute[1]) / 2)
-        teta_offset = np.array([string_length * np.sin(self.teta), -string_length * (1 - np.cos(self.teta))])
+        teta_offset = np.array(
+            [
+                string_length * np.sin(self.teta),
+                -string_length * (1 - np.cos(self.teta)),
+            ]
+        )
         offset = self.position + np.array([ENV_DIM[0] / 2, ENV_DIM[1] / 2])
-        pygame.draw.lines(screen, (255, 255, 255), False, [coord + offset for coord in self.parachute], 10)
+        pygame.draw.lines(
+            screen,
+            (255, 255, 255),
+            False,
+            [coord + offset for coord in self.parachute],
+            10,
+        )
 
-        pygame.draw.ellipse(screen, (255, 255, 255), pygame.Rect((self.body + teta_offset + offset)[0], (10, 20)))
+        pygame.draw.ellipse(
+            screen,
+            (255, 255, 255),
+            pygame.Rect((self.body + teta_offset + offset)[0], (10, 20)),
+        )
         for string in self.strings:
-            pygame.draw.line(screen, (255, 255, 255), string[0] + offset + teta_offset, string[1] + offset, 2)
+            pygame.draw.line(
+                screen,
+                (255, 255, 255),
+                string[0] + offset + teta_offset,
+                string[1] + offset,
+                2,
+            )
 
         # draw island in the middle
         pygame.draw.ellipse(screen, (0, 255, 0), pygame.Rect((340, 540), (100, 10)))
@@ -372,19 +444,25 @@ class ParachutistEnv(Env):
 
         return state
 
-    def reward(self) -> float:
+    def reward(self, action: Action) -> float:
         x_distance = abs(self.island_pos[0] - self.parachutist.position[0])
         y_distance = abs(self.island_pos[1] - self.parachutist.position[1])
-        # state variables for reward
-        distance = np.linalg.norm((3 * x_distance, y_distance))  # weight x position more
+        distance_to_island = np.linalg.norm((3 * x_distance, y_distance))
+
         speed = np.linalg.norm(self.parachutist.velocity)
+
         groundcontact = self.parachutist.position[1] > self.island_pos[1]
-        brokenleg = ((np.abs(self.parachutist.teta) > np.pi / 6 or speed > 10)) and groundcontact
+        brokenleg = (
+            (np.abs(self.parachutist.teta) > np.pi / 6 or speed > 10)
+        ) and groundcontact
         water = groundcontact and (
             self.parachutist.position[0] < self.island_pos[0] - 50
             or self.parachutist.position[0] > self.island_pos[0] + 50
         )
-        outside = self.parachutist.position[0] < self.side_x_pos[0] or self.parachutist.position[0] > self.side_x_pos[1]
+        outside = (
+            self.parachutist.position[0] < self.side_x_pos[0]
+            or self.parachutist.position[0] > self.side_x_pos[1]
+        )
         self.landed = groundcontact and not brokenleg and not water
 
         reward = 0
@@ -394,9 +472,25 @@ class ParachutistEnv(Env):
             self.game_over = True
 
         if VERBOSE:
-            print(f"distance: {distance}")
+            print(f"distance_to_island: {distance_to_island}")
 
-        shaping = -speed - distance - self.parachutist.teta_dot - self.parachutist.teta
+        # This is where the reward is calculated
+        shaping = (
+            -speed
+            - distance_to_island
+            - abs(self.parachutist.teta_dot)
+            - abs(self.parachutist.teta)
+        )
+
+        # penalize pulling on the parachute
+        if isinstance(action, Action):
+            if action == Action.BOTH:
+                shaping *= 1.2
+            elif action == Action.NONE:
+                shaping *= 0.8
+            else:
+                shaping *= 1.1
+
         if self.prev_shaping is not None:
             reward = shaping - self.prev_shaping
         self.prev_shaping = shaping
@@ -438,7 +532,7 @@ class ParachutistEnv(Env):
             ]
         )
 
-        reward = self.reward()
+        reward = self.reward(action)
         if VERBOSE:
             print(reward)
 
