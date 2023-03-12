@@ -16,7 +16,7 @@ def perlin_noise_wind(x, y, t=0, seed=1) -> List:
     """Return a horizontal wind vector subject to perlin noise"""
     time_reduction_factor = 50
     t /= time_reduction_factor
-    force = 100
+    force = 50
     out = [0, 0]
     n_layers_of_noise = 4
     xdim, ydim = 700, 700  # dimensions of the environment (overestimated)
