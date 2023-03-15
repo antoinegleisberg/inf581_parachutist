@@ -205,20 +205,44 @@ class Parachutist:
         # if the parachute is closed, we open it
         closed_parachute = np.array_equal(self.parachute, self.closed_parachute)
         if (left != 0 or right != 0) and closed_parachute:
-            print("opening parachute")
+            if VERBOSE:
+                print("opening parachute")
             self.parachute = self.default_parachute
             self.strings = [(np.array([0, 0]), x) for x in self.parachute]
             return
         if left == 0 and right == 0 and closed_parachute:
             return
-        left_position = (
-            left * self.left_pulled_parachute[0]
-            + (1 - left) * self.default_parachute[0]
-        )
-        right_position = (
-            right * self.right_pulled_parachute[3]
-            + (1 - right) * self.default_parachute[3]
-        )
+
+        if left != 0 and right == 0:
+            left_position = (
+                left * self.left_pulled_parachute[0]
+                + (1 - left) * self.default_parachute[0]
+            )
+            right_position = (
+                left * self.left_pulled_parachute[3]
+                + (1 - left) * self.default_parachute[3]
+            )
+        if left == 0 and right != 0:
+            left_position = (
+                right * self.right_pulled_parachute[0]
+                + (1 - right) * self.default_parachute[0]
+            )
+            right_position = (
+                right * self.right_pulled_parachute[3]
+                + (1 - right) * self.default_parachute[3]
+            )
+        if left != 0 and right != 0:
+            left_position = (
+                left * self.left_pulled_parachute[0]
+                + (1 - left) * self.default_parachute[0]
+            )
+            right_position = (
+                right * self.right_pulled_parachute[3]
+                + (1 - right) * self.default_parachute[3]
+            )
+        if left == 0 and right == 0:
+            left_position = self.default_parachute[0]
+            right_position = self.default_parachute[3]
 
         self.parachute = [
             left_position,
