@@ -2,12 +2,11 @@ import pygame
 from env import ParachutistEnv
 from wind import Wind, constant_wind, perlin_noise_wind, linear_wind
 
-#------------------ Params ------------------#
-CONTINUOUS = False 
+# ------------------ Params ------------------#
+CONTINUOUS = False
 START_CLOSED = True
-WIND=Wind(constant_wind)
-#--------------------------------------------#
-
+WIND = Wind(constant_wind)
+# --------------------------------------------#
 
 
 def check_pygame_exit(event: pygame.event.Event) -> None:
@@ -29,16 +28,14 @@ def get_input(event) -> None:
     return input
 
 
-
-
 if __name__ == "__main__":
     pygame.init()
     env = ParachutistEnv()
     env.parachutist.wind = WIND
     env.parachutist.is_continuous = CONTINUOUS
     input = [0, 0]  # used for continuous environment only
-    pygame.key.set_repeat(500,500)
-    score=0
+    pygame.key.set_repeat(500, 500)
+    score = 0
     while True:
         for event in pygame.event.get():
             # detect if user closes window
@@ -60,7 +57,7 @@ if __name__ == "__main__":
                         input[1] = 1
 
         state, reward, done, dic = env.step(input)
-        score+=reward
+        score += reward
 
         if done:
             print("DONE")

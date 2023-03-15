@@ -1,6 +1,7 @@
 from perlin_noise import PerlinNoise
 import numpy as np
 from typing import List
+import matplotlib.pyplot as plt
 
 
 def constant_wind(x, y, t=0, seed=1) -> List:
@@ -10,7 +11,8 @@ def constant_wind(x, y, t=0, seed=1) -> List:
 
 def linear_wind(x, y, t=0, seed=1) -> List:
     """Return a wind vector that is linear in y"""
-    return [(250-y)/12.5-10, 0.0]
+    return [(250 - y) / 12.5 - 10, 0.0]
+
 
 def perlin_noise_wind(x, y, t=0, seed=1) -> List:
     """Return a horizontal wind vector subject to perlin noise"""
@@ -24,22 +26,32 @@ def perlin_noise_wind(x, y, t=0, seed=1) -> List:
         noise = PerlinNoise(octaves=int(2 ** (i + 2)), seed=seed)
         out[0] += force * noise([x / xdim, y / ydim, t]) / 2 ** (i + 1)
     return out
-# to see wind map, run:
 
-# import matplotlib.pyplot as plt
-# seed = 2
-# force = 50
-# n_layers_of_noise = 4
-# xpix, ypix = 256, 256
-# pic = np.zeros((xpix, ypix))
-# for i in range(n_layers_of_noise):
-#     noise = PerlinNoise(octaves=int(2 ** (i + 2)), seed=seed)
-#     pic += force * np.array([[noise([i / xpix, j / ypix]) for j in range(xpix)] for i in range(ypix)]) * 1 / 2 ** (i)
-# plt.matshow(pic)
-# cbar=plt.colorbar()
-# cbar.set_label("Wind horizontal speed")
-# plt.title("Wind map with a Perlin noise wind")
-# plt.show()
+
+def plot_perlin_noise_wind():
+    seed = 2
+    force = 50
+    n_layers_of_noise = 4
+    xpix, ypix = 256, 256
+    pic = np.zeros((xpix, ypix))
+    for i in range(n_layers_of_noise):
+        noise = PerlinNoise(octaves=int(2 ** (i + 2)), seed=seed)
+        pic += (
+            force
+            * np.array(
+                [
+                    [noise([i / xpix, j / ypix]) for j in range(xpix)]
+                    for i in range(ypix)
+                ]
+            )
+            * 1
+            / 2 ** (i)
+        )
+    plt.matshow(pic)
+    cbar = plt.colorbar()
+    cbar.set_label("Wind horizontal speed")
+    plt.title("Wind map with a Perlin noise wind")
+    plt.show()
 
 
 class Wind:
@@ -47,7 +59,13 @@ class Wind:
 
     def __init__(self, wind_function=constant_wind):
         self.wind_function = wind_function
-        self.seed = np.random.randint(0, 1000000000)  # setting seed for wind functions which need it
+        self.seed = np.random.randint(
+            0, 1000000000
+        )  # setting seed for wind functions which need it
 
     def get_wind(self, x, y, t=0):
         return self.wind_function(x, y, t, self.seed)
+
+
+if __name__ == "__main__":
+    plot_perlin_noise_wind()

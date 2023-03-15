@@ -5,3 +5,5 @@ Needed packages and modules
  - torch
  - tqdm
  - pygame
+ - matplotlib
+ 

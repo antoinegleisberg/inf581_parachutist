@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from collections import deque
 import random
 import copy
-from tqdm.notebook import tqdm
 
 from env import Env, Action
 from agent_baseline import Agent
@@ -37,7 +36,6 @@ class Network(torch.nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=LR)
         self.loss = nn.MSELoss()
-        # self.to(DEVICE)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -72,7 +70,7 @@ class DQN(Agent):
         self.replay = ReplayBuffer()
         self.exploration_rate = EXPLORATION_MAX
         self.network = Network(env)
-        self.network2 = copy.deepcopy(self.network)  # A
+        self.network2 = copy.deepcopy(self.network)
         self.network2.load_state_dict(self.network.state_dict())
         self.action_space = env.action_space
 
@@ -82,7 +80,6 @@ class DQN(Agent):
 
         # Convert observation to PyTorch Tensor
         state = torch.tensor(observation).float().detach()
-        # state = state.to(DEVICE)
         state = state.unsqueeze(0)
 
         # Get Q(s,.)
@@ -98,7 +95,13 @@ class DQN(Agent):
             return
 
         # Sample minibatch s1, a1, r1, s1', done_1, ... , sn, an, rn, sn', done_n
-        state1_batch, action_batch, reward_batch, state2_batch, done_batch = self.replay.sample()
+        (
+            state1_batch,
+            action_batch,
+            reward_batch,
+            state2_batch,
+            done_batch,
+        ) = self.replay.sample()
 
         # Compute Q values (call self.network and apply the squeeze method on the result)
         q_values = self.network(state1_batch).squeeze()
@@ -119,7 +122,9 @@ class DQN(Agent):
         # boolean to float conversion
 
         done_batch = done_batch.float()
-        q_target = reward_batch + GAMMA * predicted_value_of_future * (1 - done_batch.numpy())
+        q_target = reward_batch + GAMMA * predicted_value_of_future * (
+            1 - done_batch.numpy()
+        )
         q_target = torch.tensor(q_target).float()
 
         # Compute the loss (c.f. self.network.loss())
@@ -138,26 +143,24 @@ class DQN(Agent):
         return self.exploration_rate
 
     def train(self, env: Env, episodes=50, sync_freq=10):
-        vent = env.parachutist.wind
-        print("continuous", env.parachutist.is_continuous)
-
         best_reward = -1000
         average_reward = 0
-        j=0
-        success=0
+        j = 0
+        success = 0
         plot_rewards = []
         plot_success = []
-        for eps in tqdm(range(1, episodes+1)):
+        for eps in range(1, episodes + 1):
             state = env.reset()
-            
+
             score = 0
             while True:
                 j += 1
                 action = self.act(state)
 
-                # play action for 10 frames so that the agent can't change its action in a milli second
+                # play action for multiple frames
                 for _ in range(30):
                     state_, reward, done, info = env.step(Action.from_int(action))
+                    env.render()
                     state = torch.tensor(state).float()
                     state_ = torch.tensor(state_).float()
                     exp = (state, action, reward, state_, done)
@@ -175,26 +178,25 @@ class DQN(Agent):
                 if done:
                     if score > best_reward:
                         best_reward = score
-                    average_reward += score 
-                    if reward==100:
-                        success+=1
+                    average_reward += score
+                    if reward == 100:
+                        success += 1
                     plot_rewards.append(score)
-                    plot_success.append(success/eps)
+                    plot_success.append(success / eps)
 
-                    if eps%5==0:
-                        print("Episode {} Average Reward {} Best Reward {} Last Reward {}".format(eps, average_reward/eps, best_reward, score))
-                    print(state)
+                    if eps % 5 == 0:
+                        episode_info = f"Episode {eps} Average Reward {average_reward / eps} Best Reward {best_reward} Last Reward {score}"
+                        print(episode_info)
                     break
-        episode_number = np.arange(1, episodes+1)
+        episode_number = np.arange(1, episodes + 1)
         plt.plot(episode_number, plot_rewards)
-        plt.xlabel('Episode')
-        plt.ylabel('Episode Reward')
-        plt.title('DQN Reward during training')
+        plt.xlabel("Episode")
+        plt.ylabel("Episode Reward")
+        plt.title("DQN Reward during training")
         plt.show()
 
         plt.plot(episode_number, plot_success)
-        plt.xlabel('Episode')
-        plt.ylabel('Success rate since beginning')
-        plt.title('DQN Average success rate during training')
-        plt.show()   
-      
+        plt.xlabel("Episode")
+        plt.ylabel("Success rate since beginning")
+        plt.title("DQN Average success rate during training")
+        plt.show()

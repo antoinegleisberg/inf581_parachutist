@@ -5,7 +5,7 @@ from typing import List, Tuple, Mapping
 import numpy as np
 from enum import Enum
 
-from wind import Wind, perlin_noise_wind, constant_wind, linear_wind
+from wind import Wind, linear_wind
 
 
 VERBOSE = False
@@ -475,21 +475,16 @@ class ParachutistEnv(Env):
             print(f"distance_to_island: {distance_to_island}")
 
         # This is where the reward is calculated
-        shaping = (
-            -speed
-            - distance_to_island
-            - abs(self.parachutist.teta_dot)
-            - abs(self.parachutist.teta)
-        )
+        shaping = -30 * speed - distance_to_island - 50 * abs(self.parachutist.teta)
 
         # penalize pulling on the parachute
         if isinstance(action, Action):
             if action == Action.BOTH:
-                shaping *= 1.2
+                shaping *= 1.02
             elif action == Action.NONE:
-                shaping *= 0.8
+                shaping *= 0.99
             else:
-                shaping *= 1.1
+                shaping *= 1.01
 
         if self.prev_shaping is not None:
             reward = shaping - self.prev_shaping
